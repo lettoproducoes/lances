@@ -142,7 +142,7 @@
 </div>
 
 <div id="summary">
-  <div id="total">Total: R$0</div>
+  <div id="total">Total: R$0 (0 lances)</div>
   <div id="desconto"></div>
   <button class="enviar" onclick="enviarLances()">📤 Enviar Pedido</button>
 </div>
@@ -179,7 +179,8 @@ function calcularTotal() {
     lances[i].desconto = desconto;
     total += lances[i].valor;
   }
-  document.getElementById("total").textContent = `Total: R$${total.toFixed(2)}`;
+  // Atualiza total com quantidade de lances
+  document.getElementById("total").textContent = `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})`;
   document.getElementById("desconto").textContent = desconto>0?`Desconto atual: ${desconto*100}%`:"";
   atualizarLista();
   return {total, desconto};
@@ -267,7 +268,7 @@ function enviarLances(){
     mensagem += `💰 Valor: R$${l.valor.toFixed(2)} (desconto ${l.desconto*100}%)%0A%0A`;
   });
   let resultado = calcularTotal();
-  mensagem += `💰 Total: R$${resultado.total.toFixed(2)}%0A`;
+  mensagem += `💰 Total: R$${resultado.total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})%0A`;
   mensagem += `🎯 Desconto final: ${resultado.desconto*100}%`;
   window.open(`https://wa.me/5531975017611?text=${mensagem}`);
 }
