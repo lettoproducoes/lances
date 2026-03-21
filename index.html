@@ -181,18 +181,22 @@ function formatarTempo(segundos) {
 function calcularTotal() {
   let total = 0;
   let desconto = 0;
-  for (let i=0;i<lances.length;i++){
+  for (let i=0; i<lances.length; i++){
     let qtd = i+1;
-    if(qtd>=10) desconto=0.20;
-    else if(qtd>=5) desconto=0.15;
-    else if(qtd>=2) desconto=0.10;
-    else desconto=0;
+    if(qtd===1) desconto=0;
+    else if(qtd>=10) desconto=0.20;
+    else desconto = 0.10 + ((qtd-2)*(0.10/8)); // 2 lances -> 10%, 10 lances -> 20%
+
     lances[i].valor = precoPorLance*(1-desconto);
     lances[i].desconto = desconto;
     total += lances[i].valor;
   }
-  document.getElementById("total").textContent = `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})`;
-  document.getElementById("desconto").textContent = desconto>0?`Desconto atual: ${desconto*100}%`:"";
+
+  document.getElementById("total").textContent =
+    `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})`;
+  document.getElementById("desconto").textContent =
+    desconto>0?`Desconto atual: ${Math.round(desconto*100)}%`:"";
+
   atualizarLista();
   return {total, desconto};
 }
@@ -202,7 +206,7 @@ function atualizarLista() {
   ul.innerHTML = "";
   lances.forEach((l,i)=>{
     const li = document.createElement("li");
-    let classe = l.desconto===0?"desconto0":l.desconto===0.10?"desconto10":l.desconto===0.15?"desconto15":"desconto20";
+    let classe = l.desconto===0?"desconto0":l.desconto<0.15?"desconto10":l.desconto<0.20?"desconto15":"desconto20";
     li.className = classe;
     li.innerHTML = `
       <div class="linhaLance">Lance ${i+1} ⏱ ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)} (${l.duracao.toFixed(1)}s)</div>
