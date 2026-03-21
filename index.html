@@ -81,17 +81,31 @@
       border-radius: 10px;
       font-size: 14px;
       color: #333;
+      background: #fff;
+    }
+
+    .linhaLance {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .linhaBotoes {
+      margin-top: 5px;
+      display: flex;
+      gap: 5px;
     }
 
     .ver, .remover {
-      margin-top: 5px;
       padding: 6px;
       font-size: 12px;
       border-radius: 8px;
       cursor: pointer;
+      flex: 1;
+      text-align: center;
     }
     .ver { background: #333; color: white; }
-    .remover { background: #e53935; color: white; margin-left: 5px; }
+    .remover { background: #e53935; color: white; }
 
     #summary {
       padding: 10px;
@@ -117,7 +131,6 @@
   </iframe>
 </div>
 
-<!-- Linha de marcação -->
 <div class="controls-line">
   <button id="btnInicio" class="inicio" onclick="marcarInicio()">
     🟢 <span>Marcar Início</span>
@@ -127,7 +140,6 @@
   </button>
 </div>
 
-<!-- Linha de controle -->
 <div class="controls-line">
   <button class="skip" onclick="skip(-10)">⏪ <span>10s</span></button>
   <button class="playpause" onclick="playPause()">▶️ <span>Play</span></button>
@@ -179,7 +191,6 @@ function calcularTotal() {
     lances[i].desconto = desconto;
     total += lances[i].valor;
   }
-  // Atualiza total com quantidade de lances
   document.getElementById("total").textContent = `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})`;
   document.getElementById("desconto").textContent = desconto>0?`Desconto atual: ${desconto*100}%`:"";
   atualizarLista();
@@ -194,11 +205,11 @@ function atualizarLista() {
     let classe = l.desconto===0?"desconto0":l.desconto===0.10?"desconto10":l.desconto===0.15?"desconto15":"desconto20";
     li.className = classe;
     li.innerHTML = `
-      Lance ${i+1}<br>
-      ⏱ ${formatarTempo(l.inicio)} - ${formatarTempo(l.fim)} (${l.duracao.toFixed(1)}s)<br>
-      💰 Valor: R$${l.valor.toFixed(2)} (desconto ${l.desconto*100}%)<br>
-      <button class="ver" onclick="irParaLance(${i})">▶️ Ver</button>
-      <button class="remover" onclick="removerLance(${i})">🗑️ Remover</button>
+      <div class="linhaLance">Lance ${i+1} ⏱ ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)} (${l.duracao.toFixed(1)}s)</div>
+      <div class="linhaBotoes">
+        <button class="ver" onclick="irParaLance(${i})">▶️ Ver</button>
+        <button class="remover" onclick="removerLance(${i})">🗑️ Remover</button>
+      </div>
     `;
     ul.appendChild(li);
   });
@@ -231,14 +242,8 @@ function marcarFim() {
     let fim = sec;
     let duracao = fim-inicio;
     
-    if(duracao < 3){ 
-      alert("Atenção: o lance tem menos de 3 segundos!"); 
-    }
-    
-    if(duracao > 15){ 
-      alert("Máximo de 15 segundos!"); 
-      return; 
-    }
+    if(duracao < 3){ alert("Atenção: o lance tem menos de 3 segundos!"); }
+    if(duracao > 15){ alert("Máximo de 15 segundos!"); return; }
 
     lances.push({inicio,fim,duracao,valor:0,desconto:0});
     inicio=null;
