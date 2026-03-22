@@ -53,7 +53,7 @@ h2{
   border-radius:50%;
   transform:translate(-50%, -50%);
   z-index:2;
-  pointer-events:none;
+  touch-action: none;
 }
 
 /* CONTROLES */
@@ -170,7 +170,6 @@ allow="autoplay; fullscreen"></iframe>
   <div id="handle"></div>
 </div>
 
-<!-- BOTÕES COM “MARCAR” -->
 <div class="controls">
   <button class="inicio" onclick="inicioLance()">🟢 Marcar Início</button>
   <button class="fim" onclick="fimLance()">🔴 Marcar Fim</button>
@@ -219,25 +218,24 @@ player.on('timeupdate', d => {
   if(d.duration){
     let percent = (d.seconds/d.duration)*100;
     progress.style.width = percent + "%";
-    handle.style.left = percent + "%";
+    if(!arrastando) handle.style.left = percent + "%";
   }
   if(d.seconds < ultimoTempo - 0.5) reset();
   ultimoTempo = d.seconds;
 
-  // Lance automático após 10s
   if(inicio !== null && d.seconds - inicio >= 10){
     finalizar(d.seconds);
   }
 });
 
-// Clicar timeline
+// Timeline click
 timeline.onclick=e=>{
   const r=timeline.getBoundingClientRect();
   const p=(e.clientX-r.left)/r.width;
   player.getDuration().then(d=>player.setCurrentTime(d*p));
 };
 
-// Funções de marcação
+// Marcação
 function reset(){
   inicio=null;
   clearInterval(interval);
@@ -250,21 +248,13 @@ function inicioLance(){
   player.getCurrentTime().then(t=>{
     clearInterval(interval);
     inicio=t;
-
     interval=setInterval(()=>{
       player.getCurrentTime().then(sec=>{
         let dur=sec-inicio;
         contadorLance.innerText=`⏱ Duração do lance: ${dur.toFixed(1)} s`;
-
-        if(dur>=10){
-          finalizar(sec);
-        }
-
-        if(dur>10){
-          contadorLance.classList.add("alerta","piscar");
-        } else {
-          contadorLance.classList.remove("alerta","piscar");
-        }
+        if(dur>=10) finalizar(sec);
+        if(dur>10) contadorLance.classList.add("alerta","piscar");
+        else contadorLance.classList.remove("alerta","piscar");
       });
     },100);
   });
@@ -277,21 +267,13 @@ function fimLance(){
 
 function finalizar(fim){
   if(inicio===null) return;
-
-  let dur=fim - inicio;
-  if(dur < 3){
-    reset();
-    return;
-  }
-
-  let novo = {inicio, fim, dur};
-
-  if(lances.some(l=>Math.abs(l.inicio - novo.inicio) < 0.5)){ reset(); return; }
-  if(lances.some(l=>novo.inicio < l.fim && novo.fim > l.inicio)){ alert("Sobreposição!"); reset(); return; }
-
+  let dur=fim-inicio;
+  if(dur<3){ reset(); return; }
+  let novo={inicio,fim,dur};
+  if(lances.some(l=>Math.abs(l.inicio-novo.inicio)<0.5)){ reset(); return; }
+  if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){ alert("Sobreposição!"); reset(); return; }
   lances.push(novo);
-  lances.sort((a,b)=>a.inicio - b.inicio);
-
+  lances.sort((a,b)=>a.inicio-b.inicio);
   clearInterval(interval);
   reset();
   render();
@@ -307,9 +289,7 @@ function calcDesc(i){
 function render(){
   lista.innerHTML="";
   timeline.querySelectorAll(".range").forEach(e=>e.remove());
-
   let total=0,totalSem=0;
-
   player.getDuration().then(duracao=>{
     lances.forEach((l,i)=>{
       let desc=calcDesc(i);
@@ -325,18 +305,11 @@ function render(){
 
       let v=document.createElement("button");
       v.className="ver"; v.innerText="▶️ Ver";
-      v.onclick=()=>{
-        player.setCurrentTime(l.inicio);
-        document.querySelectorAll("li").forEach(x=>x.classList.remove("ativo"));
-        li.classList.add("ativo");
-      };
+      v.onclick=()=>{ player.setCurrentTime(l.inicio); document.querySelectorAll("li").forEach(x=>x.classList.remove("ativo")); li.classList.add("ativo"); };
 
       let r=document.createElement("button");
       r.className="remover"; r.innerText="🗑️ Remover";
-      r.onclick=()=>{
-        lances=lances.filter(x=>x!==l);
-        render();
-      };
+      r.onclick=()=>{ lances=lances.filter(x=>x!==l); render(); };
 
       let box=document.createElement("div");
       box.className="linhaBotoes";
@@ -356,47 +329,53 @@ function render(){
     });
 
     let economia=totalSem-total;
-    document.getElementById("total").innerText=
-      `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
-    document.getElementById("economia").innerText=
-      economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
+    document.getElementById("total").innerText=`Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
+    document.getElementById("economia").innerText=economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
   });
 }
 
-function fmt(s){
-  let m=Math.floor(s/60);
-  let sec=Math.floor(s%60);
-  return `${m}:${sec<10?'0':''}${sec}`;
-}
+function fmt(s){ let m=Math.floor(s/60); let sec=Math.floor(s%60); return `${m}:${sec<10?'0':''}${sec}`; }
+function toggle(){ player.getPaused().then(p?player.play():player.pause()); }
+function pular(s){ player.getCurrentTime().then(t=>player.setCurrentTime(t+s)); }
 
-function toggle(){
-  player.getPaused().then(p?player.play():player.pause());
-}
-
-function pular(s){
-  player.getCurrentTime().then(t=>player.setCurrentTime(t+s));
-}
-
-// Envio WhatsApp
+// WhatsApp
 function enviar(){
-  let videoId = '1175798353';
-  let videoLink = `https://lettoproducoes.github.io/lances/?video=${videoId}`;
-  let msg = "⚽ Pedido Letto\n\n";
-  msg += `🏟️ Vídeo completo: ${videoLink}\n\n`;
-
-  lances.forEach((l,i)=>{
-    msg += `Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`;
-  });
-
-  let total = lances.reduce((acc,i,index)=> acc + preco*(1-calcDesc(index)),0);
-  let totalSem = lances.length * preco;
-  let descontoFinal = totalSem - total;
-
-  msg += `\n💰 Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''})\n`;
-  msg += `✔️ Desconto final: ${descontoFinal.toFixed(2)}`;
-
+  let videoId='1175798353';
+  let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
+  let msg="⚽ Pedido Letto\n\n";
+  msg+=`🏟️ Vídeo completo: ${videoLink}\n\n`;
+  lances.forEach((l,i)=>{ msg+=`Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`; });
+  let total=lances.reduce((acc,i,index)=>acc+preco*(1-calcDesc(index)),0);
+  let totalSem=lances.length*preco;
+  let descontoFinal=totalSem-total;
+  msg+=`\n💰 Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})\n`;
+  msg+=`✔️ Desconto final: ${descontoFinal.toFixed(2)}`;
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
 }
+
+// ARRASTAR BOLINHA TIMELINE
+let arrastando=false;
+handle.addEventListener("mousedown", startDrag);
+handle.addEventListener("touchstart", startDrag);
+
+document.addEventListener("mousemove", drag);
+document.addEventListener("touchmove", drag);
+
+document.addEventListener("mouseup", endDrag);
+document.addEventListener("touchend", endDrag);
+
+function startDrag(e){ e.preventDefault(); arrastando=true; }
+function drag(e){
+  if(!arrastando) return;
+  let clientX = e.touches? e.touches[0].clientX : e.clientX;
+  const rect=timeline.getBoundingClientRect();
+  let p=(clientX-rect.left)/rect.width;
+  if(p<0) p=0; if(p>1) p=1;
+  handle.style.left=(p*100)+"%";
+  progress.style.width=(p*100)+"%";
+  player.getDuration().then(d=>player.setCurrentTime(d*p));
+}
+function endDrag(e){ arrastando=false; }
 </script>
 
 </body>
