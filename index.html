@@ -5,43 +5,15 @@
 <title>LETTO</title>
 
 <style>
-body {
-  margin:0;
-  font-family:Arial;
-  background:#121212;
-  color:#eee;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-}
+body { margin:0; font-family:Arial; background:#121212; color:#eee; display:flex; flex-direction:column; height:100vh; }
+h2 { text-align:center; padding:10px; background:#1e1e1e; margin:0; }
+#player { width:100%; height:220px; border:none; }
 
-h2 {
-  text-align:center;
-  padding:10px;
-  background:#1e1e1e;
-  margin:0;
-}
-
-#player {
-  width:100%;
-  height:220px;
-  border:none;
-}
-
-.controls-line {
-  display:flex;
-  justify-content:space-around;
-  margin:5px;
-}
+.controls-line { display:flex; justify-content:space-around; margin:5px; }
 
 button {
-  flex:1;
-  margin:5px;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  font-size:14px;
-  color:white;
+  flex:1; margin:5px; padding:10px;
+  border:none; border-radius:10px; font-size:14px; color:white;
 }
 
 .inicio {background:#2ecc71;}
@@ -50,42 +22,19 @@ button {
 .skip {background:#f39c12;}
 .enviar {background:#3498db;}
 
-#contadorLance {
-  text-align:center;
-  font-weight:bold;
-}
+#contadorLance { text-align:center; font-weight:bold; }
 
-#lancesContainer {
-  flex:1;
-  overflow:auto;
-  padding:10px;
-}
+#lancesContainer { flex:1; overflow:auto; padding:10px; }
 
-li {
-  background:#1f1f1f;
-  margin:8px 0;
-  padding:10px;
-  border-radius:10px;
-}
+li { background:#1f1f1f; margin:8px 0; padding:10px; border-radius:10px; }
 
-.linhaLance {
-  display:flex;
-  justify-content:space-between;
-}
-
-.linhaBotoes {
-  display:flex;
-  gap:5px;
-  margin-top:5px;
-}
+.linhaLance { display:flex; justify-content:space-between; }
+.linhaBotoes { display:flex; gap:5px; margin-top:5px; }
 
 .ver {background:#333;}
 .remover {background:#e53935;}
 
-#summary {
-  background:#1e1e1e;
-  padding:10px;
-}
+#summary { background:#1e1e1e; padding:10px; }
 </style>
 </head>
 
@@ -120,12 +69,12 @@ li {
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
-// 🔥 PEGAR VIDEO DINÂMICO DA URL
+// VIDEO DINÂMICO
 const params = new URLSearchParams(window.location.search);
 const videoId = params.get("video") || "1175798353";
 
-const iframe = document.getElementById("player");
-iframe.src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
+document.getElementById("player").src =
+`https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
 
 const player = new Vimeo.Player('player');
 
@@ -140,6 +89,21 @@ function formatarTempo(s){
   let m=Math.floor(s/60);
   let sec=Math.floor(s%60);
   return `${m}:${sec<10?'0':''}${sec}`;
+}
+
+function calcularValores(){
+  let total=0;
+  let descontoFinal=0;
+
+  lances.forEach((l,i)=>{
+    let desconto = i>=1 ? Math.min(0.1 + (i-1)*(0.1/8), 0.2) : 0;
+    l.desconto = desconto;
+    l.valor = 15*(1-desconto);
+    total += l.valor;
+    descontoFinal = desconto;
+  });
+
+  return {total, descontoFinal};
 }
 
 function marcarInicio(){
@@ -179,13 +143,9 @@ function atualizar(){
   let ul=document.getElementById("lista");
   ul.innerHTML="";
 
-  let total=0;
+  let resultado = calcularValores();
 
   lances.forEach((l,i)=>{
-    let desconto=i>=1?Math.min(0.1+(i-1)*(0.1/8),0.2):0;
-    let valor=15*(1-desconto);
-    total+=valor;
-
     let li=document.createElement("li");
 
     li.innerHTML=`
@@ -201,8 +161,8 @@ function atualizar(){
     ul.appendChild(li);
   });
 
-  document.getElementById("total").innerText=
-    `Total: R$${total.toFixed(2)} (${lances.length} lances)`;
+  document.getElementById("total").innerText =
+    `Total: R$${resultado.total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})`;
 }
 
 function ver(i){
@@ -234,13 +194,18 @@ function skip(s){
 function enviarLances(){
   let msg="⚽ Pedido Letto\n\n";
 
-  msg+=`🎥 Vídeo: https://SEUUSUARIO.github.io/seuprojeto/?video=${videoId}\n\n`;
+  let linkVideo = `https://lettoproducoes.github.io/lances/?video=${videoId}`;
+  msg += `🎥 Vídeo completo: ${linkVideo}\n\n`;
+
+  let resultado = calcularValores();
 
   lances.forEach((l,i)=>{
-    msg+=`Lance ${i+1}: ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)} (${l.dur.toFixed(1)}s)\n`;
+    msg += `Lance ${i+1}: ${formatarTempo(l.inicio)} - ${formatarTempo(l.fim)} (${l.dur.toFixed(1)}s)\n`;
+    msg += `💰 Valor: R$${l.valor.toFixed(2)} (desconto ${Math.round(l.desconto*100)}%)\n\n`;
   });
 
-  msg+=`\nTotal de lances: ${lances.length}`;
+  msg += `💰 Total: R$${resultado.total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})\n`;
+  msg += `🎯 Desconto final: ${Math.round(resultado.descontoFinal*100)}%`;
 
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
 }
