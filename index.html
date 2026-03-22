@@ -1,186 +1,333 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LETTO</title>
+  <title>Letto Produções</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-body { margin:0; font-family:Arial; background:#121212; color:#eee; display:flex; flex-direction:column; height:100vh; }
-h2 { text-align:center; padding:10px; background:#1e1e1e; margin:0; }
-#player { width:100%; height:220px; border:none; }
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #121212;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-.controls-line { display:flex; justify-content:space-around; margin:5px; }
+    h2 {
+      text-align: center;
+      padding: 10px;
+      margin: 0;
+      background: #1e1e1e;
+    }
 
-button {
-  flex:1; margin:5px; padding:10px;
-  border:none; border-radius:10px; font-size:14px; color:white;
-}
+    #playerContainer { position: relative; }
 
-.inicio {background:#2ecc71;}
-.fim {background:#e74c3c;}
-.playpause {background:#9b59b6;}
-.skip {background:#f39c12;}
-.enviar {background:#3498db;}
+    #player {
+      width: 100%;
+      height: 220px;
+      border: none;
+    }
 
-#contadorLance { text-align:center; font-weight:bold; }
+    /* BOTÕES */
+    #btnFullNative, #btnFullFake, #btnImersivo {
+      position: absolute;
+      top: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
 
-#lancesContainer { flex:1; overflow:auto; padding:10px; }
+    #btnFullNative { right: 10px; }
+    #btnFullFake { right: 50px; }
+    #btnImersivo { right: 90px; }
 
-li { background:#1f1f1f; margin:8px 0; padding:10px; border-radius:10px; }
+    /* FULLSCREEN */
+    .fullscreenFake {
+      position: fixed !important;
+      top:0; left:0;
+      width:100vw; height:100vh;
+      z-index:9999;
+      background:black;
+    }
 
-.linhaLance { display:flex; justify-content:space-between; }
-.linhaBotoes { display:flex; gap:5px; margin-top:5px; }
+    .fullscreenFake iframe { height:100%; }
 
-.ver {background:#333;}
-.remover {background:#e53935;}
+    /* IMERSIVO */
+    .modoImersivo #playerContainer {
+      position:fixed;
+      top:0; left:0;
+      width:100vw; height:100vh;
+      z-index:9999;
+      background:black;
+    }
 
-#summary { background:#1e1e1e; padding:10px; }
-</style>
+    .modoImersivo #player { height:100%; }
+
+    .modoImersivo h2,
+    .modoImersivo #lancesContainer,
+    .modoImersivo #summary {
+      display:none;
+    }
+
+    .modoImersivo .controls-line {
+      position:absolute;
+      bottom:20px;
+      width:100%;
+    }
+
+    .modoImersivo #contadorLance {
+      position:absolute;
+      top:50px;
+      width:100%;
+      background:rgba(0,0,0,0.5);
+    }
+
+    .controls-line {
+      display:flex;
+      justify-content:space-around;
+      margin:5px;
+    }
+
+    button {
+      flex:1;
+      padding:10px;
+      margin:5px;
+      border:none;
+      border-radius:10px;
+      color:white;
+      font-size:16px;
+    }
+
+    .inicio { background:#2ecc71; }
+    .fim { background:#e74c3c; }
+    .playpause { background:#9b59b6; }
+    .skip { background:#f39c12; }
+    .enviar { background:#3498db; }
+
+    #contadorLance {
+      text-align:center;
+      font-size:18px;
+      font-weight:bold;
+      margin:5px 0;
+    }
+
+    #lancesContainer {
+      flex:1;
+      overflow-y:auto;
+      padding:10px;
+    }
+
+    li {
+      margin:8px 0;
+      padding:10px;
+      border-radius:10px;
+      background:#1f1f1f;
+    }
+
+    .linhaLance {
+      font-size:14px;
+    }
+
+    .valor {
+      font-size:13px;
+      color:#2ecc71;
+      margin-top:3px;
+    }
+
+    .linhaBotoes {
+      margin-top:5px;
+      display:flex;
+      gap:5px;
+    }
+
+    .ver { background:#333; }
+    .remover { background:#e53935; }
+
+    #summary {
+      padding:10px;
+      background:#1e1e1e;
+    }
+
+    /* ✨ ANIMAÇÃO DE GANHO */
+    @keyframes ganhoPulse {
+      0% { transform: scale(1); color: #2ecc71; }
+      50% { transform: scale(1.1); color: #00ff88; }
+      100% { transform: scale(1); color: #2ecc71; }
+    }
+
+    .ganho-animado {
+      animation: ganhoPulse 0.5s ease;
+    }
+  </style>
 </head>
 
 <body>
 
 <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
 
-<iframe id="player" allow="autoplay; fullscreen"></iframe>
+<div id="playerContainer">
+  <iframe id="player"
+    src="https://player.vimeo.com/video/1175798353?background=1&autoplay=1&muted=1"
+    allow="autoplay; fullscreen"></iframe>
+
+  <button id="btnImersivo" onclick="toggleImersivo()">🎬</button>
+  <button id="btnFullFake" onclick="toggleQuaseFullscreen()">⬛</button>
+  <button id="btnFullNative" onclick="fullscreenNativo()">⛶</button>
+</div>
 
 <div class="controls-line">
-  <button id="btnInicio" class="inicio" onclick="marcarInicio()">🟢 Marcar Início</button>
+  <button class="inicio" onclick="marcarInicio()">🟢 Marcar Início</button>
   <button class="fim" onclick="marcarFim()">🔴 Marcar Fim</button>
 </div>
 
 <div class="controls-line">
-  <button class="skip" onclick="skip(-10)">⏪</button>
-  <button id="btnPlayPause" class="playpause" onclick="playPause()">▶️ Play</button>
-  <button class="skip" onclick="skip(10)">⏩</button>
+  <button class="skip" onclick="skip(-10)">⏪ 10s</button>
+  <button class="playpause" id="btnPlayPause" onclick="playPause()">▶️ Play</button>
+  <button class="skip" onclick="skip(10)">⏩ 10s</button>
 </div>
 
-<div id="contadorLance">⏱ 0s</div>
+<div id="contadorLance">⏱ Duração do lance: 0 s</div>
 
 <div id="lancesContainer">
-<ul id="lista"></ul>
+  <ul id="lista"></ul>
 </div>
 
 <div id="summary">
-<div id="total">Total: R$0 (0 lances)</div>
-<button class="enviar" onclick="enviarLances()">📤 Enviar Pedido</button>
+  <div id="total">Total: R$0 (0 lances)</div>
+  <button class="enviar" onclick="enviarLances()">📤 Enviar Pedido</button>
 </div>
 
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
-// VIDEO DINÂMICO
-const params = new URLSearchParams(window.location.search);
-const videoId = params.get("video") || "1175798353";
-
-document.getElementById("player").src =
-`https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
-
 const player = new Vimeo.Player('player');
 
-let inicio = null;
-let lances = [];
-let contadorInterval;
+let inicio=null, lances=[], contadorInterval=null;
+let economiaAnterior = 0;
+const preco=15;
 
-const btnInicio = document.getElementById("btnInicio");
-const btnPlayPause = document.getElementById("btnPlayPause");
+// FULLSCREEN
+function fullscreenNativo(){ player.requestFullscreen(); }
+function toggleQuaseFullscreen(){
+  document.getElementById("playerContainer").classList.toggle("fullscreenFake");
+}
+function toggleImersivo(){
+  document.body.classList.toggle("modoImersivo");
+}
 
+// TEMPO
 function formatarTempo(s){
-  let m=Math.floor(s/60);
-  let sec=Math.floor(s%60);
+  let m=Math.floor(s/60), sec=Math.floor(s%60);
   return `${m}:${sec<10?'0':''}${sec}`;
 }
 
-function calcularValores(){
-  let total=0;
-  let descontoFinal=0;
-
-  lances.forEach((l,i)=>{
-    let desconto = i>=1 ? Math.min(0.1 + (i-1)*(0.1/8), 0.2) : 0;
-    l.desconto = desconto;
-    l.valor = 15*(1-desconto);
-    total += l.valor;
-    descontoFinal = desconto;
+// CONTADOR
+function atualizarContador(){
+  if(inicio===null) return;
+  player.getCurrentTime().then(sec=>{
+    let dur=sec-inicio;
+    document.getElementById("contadorLance").innerText =
+      `⏱ Duração do lance: ${dur.toFixed(1)} s`;
   });
-
-  return {total, descontoFinal};
 }
 
+// INICIO
 function marcarInicio(){
   player.getCurrentTime().then(t=>{
     inicio=t;
-    btnInicio.innerText="🟢 "+formatarTempo(t);
-
-    contadorInterval=setInterval(()=>{
-      player.getCurrentTime().then(c=>{
-        document.getElementById("contadorLance").innerText="⏱ "+(c-inicio).toFixed(1)+"s";
-      });
-    },100);
+    contadorInterval=setInterval(atualizarContador,100);
   });
 }
 
+// FIM
 function marcarFim(){
-  if(inicio==null) return alert("Marque o início primeiro");
-
   player.getCurrentTime().then(fim=>{
     let dur=fim-inicio;
-
-    if(dur<3) return alert("Mínimo 3s");
-    if(dur>10) return alert("Máximo 10s");
+    if(dur<3||dur>10) return alert("O lance deve ter entre 3 e 10 segundos");
 
     lances.push({inicio,fim,dur});
-
     inicio=null;
     clearInterval(contadorInterval);
-    btnInicio.innerText="🟢 Marcar Início";
-    document.getElementById("contadorLance").innerText="⏱ 0s";
 
+    document.getElementById("contadorLance").innerText="⏱ Duração do lance: 0 s";
     atualizar();
   });
 }
 
+// DESCONTO
+function calcularDesconto(i){
+  let qtd=i+1;
+  if(qtd===1) return 0;
+  if(qtd>=10) return 0.20;
+  return 0.10 + ((qtd-2)*(0.10/8));
+}
+
+// ATUALIZAR
 function atualizar(){
   let ul=document.getElementById("lista");
   ul.innerHTML="";
 
-  let resultado = calcularValores();
+  let total=0;
+  let totalSemDesconto=0;
 
   lances.forEach((l,i)=>{
-    let li=document.createElement("li");
+    let desconto=calcularDesconto(i);
+    let valor=preco*(1-desconto);
 
+    total+=valor;
+    totalSemDesconto+=preco;
+
+    let li=document.createElement("li");
     li.innerHTML=`
       <div class="linhaLance">
         Lance ${i+1} ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)} (${l.dur.toFixed(1)}s)
       </div>
+      <div class="valor">
+        💰 R$${valor.toFixed(2)} (${Math.round(desconto*100)}%)
+      </div>
       <div class="linhaBotoes">
-        <button class="ver" onclick="ver(${i})">▶️</button>
-        <button class="remover" onclick="remover(${i})">🗑️</button>
+        <button class="ver" onclick="ver(${i})">▶️ Ver</button>
+        <button class="remover" onclick="remover(${i})">🗑️ Remover</button>
       </div>
     `;
-
     ul.appendChild(li);
   });
 
-  document.getElementById("total").innerText =
-    `Total: R$${resultado.total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})`;
+  let economia = totalSemDesconto - total;
+
+  let textoTotal =
+    `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
+
+  if(economia > 0){
+    textoTotal += ` 💸 Economizou R$${economia.toFixed(2)}`;
+  }
+
+  let elTotal = document.getElementById("total");
+  elTotal.innerText = textoTotal;
+
+  if(economia > economiaAnterior){
+    elTotal.classList.add("ganho-animado");
+    setTimeout(()=> elTotal.classList.remove("ganho-animado"), 500);
+  }
+
+  economiaAnterior = economia;
 }
 
-function ver(i){
-  player.setCurrentTime(lances[i].inicio).then(()=>player.play());
-}
-
-function remover(i){
-  lances.splice(i,1);
-  atualizar();
-}
+// CONTROLES
+function ver(i){ player.setCurrentTime(lances[i].inicio); }
+function remover(i){ lances.splice(i,1); atualizar(); }
 
 function playPause(){
   player.getPaused().then(p=>{
     if(p){
       player.play();
       btnPlayPause.innerText="⏸️ Pause";
-      btnInicio.innerText="🟢 Marcar Início";
-    }else{
+    } else {
       player.pause();
       btnPlayPause.innerText="▶️ Play";
     }
@@ -191,26 +338,14 @@ function skip(s){
   player.getCurrentTime().then(t=>player.setCurrentTime(t+s));
 }
 
+// WHATSAPP
 function enviarLances(){
   let msg="⚽ Pedido Letto\n\n";
-
-  let linkVideo = `https://lettoproducoes.github.io/lances/?video=${videoId}`;
-  msg += `🎥 Vídeo completo: ${linkVideo}\n\n`;
-
-  let resultado = calcularValores();
-
   lances.forEach((l,i)=>{
-    msg += `Lance ${i+1}: ${formatarTempo(l.inicio)} - ${formatarTempo(l.fim)} (${l.dur.toFixed(1)}s)\n`;
-    msg += `💰 Valor: R$${l.valor.toFixed(2)} (desconto ${Math.round(l.desconto*100)}%)\n\n`;
+    msg+=`Lance ${i+1}: ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)}\n`;
   });
-
-  msg += `💰 Total: R$${resultado.total.toFixed(2)} (${lances.length} lance${lances.length!==1?'s':''})\n`;
-  msg += `🎯 Desconto final: ${Math.round(resultado.descontoFinal*100)}%`;
-
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
 }
-
-player.play();
 </script>
 
 </body>
