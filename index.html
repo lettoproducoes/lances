@@ -30,7 +30,7 @@
       border: none;
     }
 
-    /* BOTÕES FULLSCREEN */
+    /* FULLSCREEN BOTÕES */
     #btnFullNative, #btnFullFake, #btnImersivo {
       position: absolute;
       top: 10px;
@@ -116,21 +116,16 @@
       margin:5px 0;
     }
 
-    /* 🔴 ALERTA */
-    .contador-alerta {
-      color: #e74c3c !important;
-    }
+    /* ALERTA + PISCAR */
+    .contador-alerta { color:#e74c3c !important; }
 
-    /* ✨ PISCAR SUAVE */
     @keyframes piscarLeve {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
+      0% { opacity:1; }
+      50% { opacity:0.5; }
+      100% { opacity:1; }
     }
 
-    .piscar {
-      animation: piscarLeve 0.8s infinite;
-    }
+    .piscar { animation: piscarLeve 0.8s infinite; }
 
     /* LISTA COMPACTA */
     #lancesContainer {
@@ -140,10 +135,10 @@
     }
 
     li {
-      margin:4px 0;
-      padding:6px 8px;
-      border-radius:6px;
-      background:#1a1a1a;
+      margin:2px 0;
+      padding:6px;
+      border-radius:4px;
+      background:#181818;
       font-size:13px;
     }
 
@@ -151,7 +146,7 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:5px;
+      gap:6px;
     }
 
     .infoLance {
@@ -169,29 +164,44 @@
 
     .linhaBotoes {
       display:flex;
-      gap:3px;
+      gap:2px;
     }
 
     .ver, .remover {
-      padding:4px 6px;
-      font-size:11px;
-      border-radius:6px;
+      padding:3px 5px;
+      font-size:10px;
+      border-radius:5px;
       flex:none;
     }
 
     .ver { background:#333; }
     .remover { background:#e53935; }
 
+    /* 🎯 destaque */
+    .lance-ativo {
+      background:#2a2a2a !important;
+    }
+
+    /* ✨ animação */
+    @keyframes fadeSlide {
+      from { opacity:0; transform:translateY(5px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+
+    .novo-lance {
+      animation: fadeSlide 0.3s ease;
+    }
+
     #summary {
       padding:10px;
       background:#1e1e1e;
     }
 
-    /* GANHO */
+    /* 💰 ganho */
     @keyframes ganhoPulse {
-      0% { transform: scale(1); color: #2ecc71; }
-      50% { transform: scale(1.1); color: #00ff88; }
-      100% { transform: scale(1); color: #2ecc71; }
+      0% { transform:scale(1); color:#2ecc71; }
+      50% { transform:scale(1.1); color:#00ff88; }
+      100% { transform:scale(1); color:#2ecc71; }
     }
 
     .ganho-animado {
@@ -243,6 +253,7 @@ const player = new Vimeo.Player('player');
 
 let inicio=null, lances=[], contadorInterval=null;
 let economiaAnterior=0;
+let lanceAtivoIndex=null;
 const preco=15;
 
 // FULLSCREEN
@@ -271,11 +282,9 @@ function atualizarContador(){
     el.innerText = `⏱ Duração do lance: ${dur.toFixed(1)} s`;
 
     if(dur > 10){
-      el.classList.add("contador-alerta");
-      el.classList.add("piscar");
+      el.classList.add("contador-alerta","piscar");
     } else {
-      el.classList.remove("contador-alerta");
-      el.classList.remove("piscar");
+      el.classList.remove("contador-alerta","piscar");
     }
   });
 }
@@ -292,7 +301,7 @@ function marcarInicio(){
 function marcarFim(){
   player.getCurrentTime().then(fim=>{
     let dur=fim-inicio;
-    if(dur<3||dur>10) return alert("O lance deve ter entre 3 e 10 segundos");
+    if(dur<3||dur>10) return alert("3s a 10s");
 
     lances.push({inicio,fim,dur});
     inicio=null;
@@ -330,10 +339,19 @@ function atualizar(){
     totalSemDesconto+=preco;
 
     let li=document.createElement("li");
+
+    if(i===lanceAtivoIndex){
+      li.classList.add("lance-ativo");
+    }
+
+    if(i===lances.length-1){
+      li.classList.add("novo-lance");
+    }
+
     li.innerHTML=`
       <div class="linhaLance">
         <div class="infoLance">
-          ${i+1}. ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)}
+          ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)}
           <span class="valor">R$${valor.toFixed(2)} (${Math.round(desconto*100)}%)</span>
         </div>
         <div class="linhaBotoes">
@@ -363,11 +381,25 @@ function atualizar(){
   }
 
   economiaAnterior=economia;
+
+  // auto scroll
+  setTimeout(()=>{
+    const c=document.getElementById("lancesContainer");
+    c.scrollTo({top:c.scrollHeight,behavior:"smooth"});
+  },50);
 }
 
 // CONTROLES
-function ver(i){ player.setCurrentTime(lances[i].inicio); }
-function remover(i){ lances.splice(i,1); atualizar(); }
+function ver(i){
+  lanceAtivoIndex=i;
+  player.setCurrentTime(lances[i].inicio);
+  atualizar();
+}
+
+function remover(i){
+  lances.splice(i,1);
+  atualizar();
+}
 
 function playPause(){
   player.getPaused().then(p=>{
