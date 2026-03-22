@@ -9,10 +9,10 @@ body {
   margin:0;
   font-family:Arial;
   background:#121212;
-  color:#eee;
-  overscroll-behavior:none;
+  color:#fff;
 }
 
+/* HEADER */
 h2 {
   text-align:center;
   padding:10px;
@@ -20,41 +20,36 @@ h2 {
   margin:0;
 }
 
-/* PLAYER */
-#playerContainer {
-  position:relative;
-  width:100%;
-  height:60vh;
+/* WRAPPER */
+#videoWrapper {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  transition: 0.3s;
+}
+
+/* FULLSCREEN PRO */
+.fullscreen {
+  position: fixed !important;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  z-index:9999;
   background:black;
 }
 
+/* PLAYER */
 #player {
   width:100%;
   height:100%;
   border:none;
 }
 
-/* CONTROLES FLUTUANTES */
-#floatingControls {
-  position:absolute;
-  top:10px;
-  right:10px;
-  display:flex;
-  gap:8px;
-}
-
-#floatingControls button {
-  background:rgba(0,0,0,0.6);
-  color:white;
-  border:none;
-  padding:8px;
-  border-radius:8px;
-}
-
-/* BOTÕES MARCAÇÃO */
+/* OVERLAY */
 #overlay {
   position:absolute;
-  bottom:15px;
+  bottom:20px;
   width:100%;
   display:flex;
   justify-content:center;
@@ -62,11 +57,28 @@ h2 {
 }
 
 #overlay button {
-  background:rgba(0,0,0,0.7);
+  background:rgba(0,0,0,0.6);
   color:white;
   border:none;
   padding:12px;
   border-radius:12px;
+  font-size:16px;
+}
+
+/* CONTROLES */
+#controlsTop {
+  position:absolute;
+  top:10px;
+  right:10px;
+}
+
+.ctrlBtn {
+  background:rgba(0,0,0,0.6);
+  color:white;
+  border:none;
+  padding:8px;
+  border-radius:8px;
+  margin-left:5px;
 }
 
 /* CONTADOR */
@@ -76,7 +88,7 @@ h2 {
 }
 
 /* LISTA */
-#lista {
+#lancesContainer {
   padding:10px;
 }
 
@@ -87,19 +99,18 @@ li {
   border-radius:10px;
 }
 
-/* TOTAL */
+/* BOTÃO ENVIAR */
 #summary {
   padding:10px;
   background:#1e1e1e;
 }
 
-.enviar {
+button.enviar {
   width:100%;
   background:#3498db;
   padding:12px;
   border:none;
   border-radius:10px;
-  color:white;
 }
 </style>
 </head>
@@ -108,18 +119,22 @@ li {
 
 <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
 
-<div id="playerContainer">
-  <iframe id="player" allow="autoplay; fullscreen"></iframe>
+<div id="videoWrapper">
 
-  <div id="floatingControls">
-    <button onclick="toggleFullscreen()" id="btnFullscreen">⛶</button>
-    <button onclick="playPause()" id="btnPlay">▶️</button>
+  <iframe id="player"></iframe>
+
+  <!-- CONTROLES TOP -->
+  <div id="controlsTop">
+    <button class="ctrlBtn" onclick="toggleFullscreen()">⛶</button>
+    <button class="ctrlBtn" onclick="playPause()">▶️</button>
   </div>
 
+  <!-- BOTÕES SOBREPOSTOS -->
   <div id="overlay">
     <button onclick="marcarInicio()">🟢 Início</button>
     <button onclick="marcarFim()">🔴 Fim</button>
   </div>
+
 </div>
 
 <div id="contadorLance">⏱ 0s</div>
@@ -146,47 +161,21 @@ const player = new Vimeo.Player('player');
 let inicio=null;
 let lances=[];
 let contadorInterval;
-let emFullscreen=false;
 
-// FULLSCREEN
+// FULLSCREEN PRO
 function toggleFullscreen(){
-  if(!emFullscreen){
-    player.requestFullscreen().then(()=>{
-      emFullscreen=true;
-      atualizarBtnFullscreen();
-    });
-  } else {
-    player.exitFullscreen().then(()=>{
-      emFullscreen=false;
-      atualizarBtnFullscreen();
-    });
-  }
+  document.getElementById("videoWrapper").classList.toggle("fullscreen");
 }
 
-function atualizarBtnFullscreen(){
-  document.getElementById("btnFullscreen").innerText =
-    emFullscreen ? "✖" : "⛶";
-}
-
-player.on('fullscreenchange', function(data) {
-  emFullscreen = data.fullscreen;
-  atualizarBtnFullscreen();
-});
-
-// PLAY / PAUSE
+// PLAY/PAUSE
 function playPause(){
   player.getPaused().then(p=>{
-    if(p){
-      player.play();
-      document.getElementById("btnPlay").innerText="⏸️";
-    } else {
-      player.pause();
-      document.getElementById("btnPlay").innerText="▶️";
-    }
+    if(p) player.play();
+    else player.pause();
   });
 }
 
-// TEMPO
+// FORMATAR TEMPO
 function formatarTempo(s){
   let m=Math.floor(s/60);
   let sec=Math.floor(s%60);
@@ -242,26 +231,12 @@ function atualizar(){
       Lance ${i+1}: ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)} (${l.dur.toFixed(1)}s)
       <br>
       💰 R$${valor.toFixed(2)} (${Math.round(desconto*100)}%)
-      <br>
-      <button onclick="ver(${i})">▶️</button>
-      <button onclick="remover(${i})">🗑️</button>
     `;
     ul.appendChild(li);
   });
 
-  document.getElementById("total").innerText =
-    `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
-}
-
-// VER
-function ver(i){
-  player.setCurrentTime(lances[i].inicio).then(()=>player.play());
-}
-
-// REMOVER
-function remover(i){
-  lances.splice(i,1);
-  atualizar();
+  document.getElementById("total").innerText=
+    `Total: R$${total.toFixed(2)} (${lances.length} lances)`;
 }
 
 // WHATSAPP
@@ -289,7 +264,6 @@ function enviarLances(){
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
 }
 
-// AUTOPLAY
 player.play();
 </script>
 
