@@ -129,7 +129,7 @@
 </head>
 <body>
 
-<h2>Letto Produções ⚽</h2>
+<h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
 
 <div id="playerContainer">
   <iframe id="player"
@@ -193,7 +193,7 @@ function calcularTotal() {
     let qtd = i+1;
     if(qtd===1) desconto=0;
     else if(qtd>=10) desconto=0.20;
-    else desconto = 0.10 + ((qtd-2)*(0.10/8)); // 2 lances -> 10%, 10 lances -> 20%
+    else desconto = 0.10 + ((qtd-2)*(0.10/8));
 
     lances[i].valor = precoPorLance*(1-desconto);
     lances[i].desconto = desconto;
@@ -301,6 +301,8 @@ function playPause(){
     if(paused) {
       player.play();
       btnPlayPause.innerHTML = "⏸️ <span>Pause</span>";
+      // resetar botão de início ao clicar Play
+      btnInicio.textContent = "🟢 Marcar Início";
     } else {
       player.pause();
       btnPlayPause.innerHTML = "▶️ <span>Play</span>";
