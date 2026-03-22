@@ -22,33 +22,38 @@ h2{
   background:#1e1e1e;
 }
 
+/* PLAYER */
 #player{width:100%;height:220px;border:none;}
 
+/* TIMELINE */
 #timeline{
   height:14px;
   background:#2a2a2a;
   position:relative;
   cursor:pointer;
+  border-radius:7px;
+  margin:5px 0;
 }
-
 #progress{
   height:100%;
   width:0%;
   background:#2ecc71;
+  border-radius:7px 0 0 7px;
+  position:relative;
+  z-index:1;
 }
-
-.range{
+#handle{
   position:absolute;
-  top:0;
-  height:100%;
-  background:#e74c3c;
-  border-radius:3px;
-  opacity:.7;
-}
-
-.range.ativo{
-  background:#f1c40f;
-  opacity:1;
+  top:50%;
+  left:0%;
+  width:16px;
+  height:16px;
+  background:#ffffff;
+  border:2px solid #3498db;
+  border-radius:50%;
+  transform:translate(-50%, -50%);
+  z-index:2;
+  pointer-events:none;
 }
 
 /* CONTROLES */
@@ -118,10 +123,10 @@ li{
 
 .ativo{background:#2a2a2a;}
 
-/* RODAPÉ FIXO - Ajustado para Safari/iOS */
+/* RODAPÉ FIXO */
 #footer{
   background:#1e1e1e;
-  padding:15px 10px 25px 10px; /* padding-bottom maior para evitar sobreposição */
+  padding:15px 10px 25px 10px;
   border-top:1px solid #333;
   display:flex;
   justify-content:space-between;
@@ -133,10 +138,21 @@ li{
   flex:1 1 auto;
 }
 
+#total{
+  font-weight:bold;
+}
+
+#economia{
+  font-size:12px;
+  color:#2ecc71;
+  font-weight:bold;
+  margin-top:3px;
+}
+
 #footer .enviar{
   flex:0 0 auto;
   margin:0;
-  padding:10px 15px; /* aumenta área clicável do botão */
+  padding:10px 15px;
 }
 </style>
 </head>
@@ -151,11 +167,13 @@ allow="autoplay; fullscreen"></iframe>
 
 <div id="timeline">
   <div id="progress"></div>
+  <div id="handle"></div>
 </div>
 
+<!-- BOTÕES COM “MARCAR” -->
 <div class="controls">
-  <button class="inicio" onclick="inicioLance()">🟢 Início</button>
-  <button class="fim" onclick="fimLance()">🔴 Fim</button>
+  <button class="inicio" onclick="inicioLance()">🟢 Marcar Início</button>
+  <button class="fim" onclick="fimLance()">🔴 Marcar Fim</button>
 </div>
 
 <div class="controls">
@@ -187,28 +205,39 @@ const timeline = document.getElementById("timeline");
 const progress = document.getElementById("progress");
 const lista = document.getElementById("lista");
 const btn = document.getElementById("btnPlayPause");
+const handle = document.getElementById("handle");
 
-let inicio = null, lances = [], ultimoTempo = 0;
+let inicio = null, lances = [], ultimoTempo = 0, interval = null;
 const preco = 15;
 
-// play/pause sync
+// Play/pause sync
 player.on('play',()=>btn.innerText="⏸️");
 player.on('pause',()=>btn.innerText="▶️");
 
-// timeline + lógica
-player.on('timeupdate',d=>{
-  if(d.duration) progress.style.width=(d.seconds/d.duration*100)+"%";
-  if(d.seconds<ultimoTempo-0.5) reset();
-  ultimoTempo=d.seconds;
-  if(inicio!==null && d.seconds-inicio>=10) finalizar(d.seconds);
+// Atualiza timeline e bolinha
+player.on('timeupdate', d => {
+  if(d.duration){
+    let percent = (d.seconds/d.duration)*100;
+    progress.style.width = percent + "%";
+    handle.style.left = percent + "%";
+  }
+  if(d.seconds < ultimoTempo - 0.5) reset();
+  ultimoTempo = d.seconds;
+
+  // Lance automático após 10s
+  if(inicio !== null && d.seconds - inicio >= 10){
+    finalizar(d.seconds);
+  }
 });
 
+// Clicar timeline
 timeline.onclick=e=>{
   const r=timeline.getBoundingClientRect();
   const p=(e.clientX-r.left)/r.width;
   player.getDuration().then(d=>player.setCurrentTime(d*p));
 };
 
+// Funções de marcação
 function reset(){
   inicio=null;
   clearInterval(interval);
@@ -219,14 +248,21 @@ function reset(){
 function inicioLance(){
   player.play();
   player.getCurrentTime().then(t=>{
+    clearInterval(interval);
     inicio=t;
+
     interval=setInterval(()=>{
       player.getCurrentTime().then(sec=>{
         let dur=sec-inicio;
         contadorLance.innerText=`⏱ Duração do lance: ${dur.toFixed(1)} s`;
+
+        if(dur>=10){
+          finalizar(sec);
+        }
+
         if(dur>10){
           contadorLance.classList.add("alerta","piscar");
-        }else{
+        } else {
           contadorLance.classList.remove("alerta","piscar");
         }
       });
@@ -240,19 +276,23 @@ function fimLance(){
 }
 
 function finalizar(fim){
-  let dur=fim-inicio;
-  if(dur<3) return;
+  if(inicio===null) return;
 
-  let novo={inicio,fim,dur};
-
-  if(lances.some(l=>Math.abs(l.inicio-novo.inicio)<0.5)) return reset();
-  if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){
-    alert("Sobreposição!");
-    return reset();
+  let dur=fim - inicio;
+  if(dur < 3){
+    reset();
+    return;
   }
 
+  let novo = {inicio, fim, dur};
+
+  if(lances.some(l=>Math.abs(l.inicio - novo.inicio) < 0.5)){ reset(); return; }
+  if(lances.some(l=>novo.inicio < l.fim && novo.fim > l.inicio)){ alert("Sobreposição!"); reset(); return; }
+
   lances.push(novo);
-  lances.sort((a,b)=>a.inicio-b.inicio);
+  lances.sort((a,b)=>a.inicio - b.inicio);
+
+  clearInterval(interval);
   reset();
   render();
 }
@@ -271,12 +311,11 @@ function render(){
   let total=0,totalSem=0;
 
   player.getDuration().then(duracao=>{
-
     lances.forEach((l,i)=>{
       let desc=calcDesc(i);
       let valor=preco*(1-desc);
-      total += valor;
-      totalSem += preco;
+      total+=valor;
+      totalSem+=preco;
 
       let li=document.createElement("li");
       let info=document.createElement("div");
@@ -331,14 +370,14 @@ function fmt(s){
 }
 
 function toggle(){
-  player.getPaused().then(p=>p?player.play():player.pause());
+  player.getPaused().then(p?player.play():player.pause());
 }
 
 function pular(s){
   player.getCurrentTime().then(t=>player.setCurrentTime(t+s));
 }
 
-// FUNÇÃO DE ENVIO COM EMOJIS COMPATÍVEIS
+// Envio WhatsApp
 function enviar(){
   let videoId = '1175798353';
   let videoLink = `https://lettoproducoes.github.io/lances/?video=${videoId}`;
