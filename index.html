@@ -121,8 +121,6 @@ li{
 .ver{background:#333;}
 .remover{background:#e53935;}
 
-.ativo{background:#2a2a2a;}
-
 /* RODAPÉ FIXO */
 #footer{
   background:#1e1e1e;
@@ -163,9 +161,7 @@ li{
 <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
 
 <!-- PLAYER ORIGINAL (background=1, autoplay, muted) -->
-<iframe id="player"
-src="https://player.vimeo.com/video/1175798353?background=1&autoplay=1&muted=1"
-allow="autoplay; fullscreen"></iframe>
+<iframe id="player" allow="autoplay; fullscreen"></iframe>
 
 <div id="timeline">
   <div id="progress"></div>
@@ -200,6 +196,15 @@ allow="autoplay; fullscreen"></iframe>
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
+// Recebe o parâmetro "video" da URL
+function getVideoId(){
+  const params = new URLSearchParams(window.location.search);
+  return params.get('video') || '1175798353'; // padrão se não passar
+}
+
+const videoId = getVideoId();
+document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
+
 const player = new Vimeo.Player('player');
 
 const timeline = document.getElementById("timeline");
@@ -342,7 +347,6 @@ function pular(s){ player.getCurrentTime().then(t=>player.setCurrentTime(t+s)); 
 
 // WhatsApp
 function enviar(){
-  let videoId='1175798353';
   let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
   let msg="⚽ Pedido Letto\n\n";
   msg+=`🎥 Vídeo completo: ${videoLink}\n\n`;
