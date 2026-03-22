@@ -93,9 +93,7 @@ li {
 
 <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
 
-<iframe id="player"
-src="https://player.vimeo.com/video/1175798353?background=1&autoplay=1&muted=1"
-allow="autoplay; fullscreen"></iframe>
+<iframe id="player" allow="autoplay; fullscreen"></iframe>
 
 <div class="controls-line">
   <button id="btnInicio" class="inicio" onclick="marcarInicio()">🟢 Marcar Início</button>
@@ -122,6 +120,13 @@ allow="autoplay; fullscreen"></iframe>
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
+// 🔥 PEGAR VIDEO DINÂMICO DA URL
+const params = new URLSearchParams(window.location.search);
+const videoId = params.get("video") || "1175798353";
+
+const iframe = document.getElementById("player");
+iframe.src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
+
 const player = new Vimeo.Player('player');
 
 let inicio = null;
@@ -141,6 +146,7 @@ function marcarInicio(){
   player.getCurrentTime().then(t=>{
     inicio=t;
     btnInicio.innerText="🟢 "+formatarTempo(t);
+
     contadorInterval=setInterval(()=>{
       player.getCurrentTime().then(c=>{
         document.getElementById("contadorLance").innerText="⏱ "+(c-inicio).toFixed(1)+"s";
@@ -227,6 +233,8 @@ function skip(s){
 
 function enviarLances(){
   let msg="⚽ Pedido Letto\n\n";
+
+  msg+=`🎥 Vídeo: https://SEUUSUARIO.github.io/seuprojeto/?video=${videoId}\n\n`;
 
   lances.forEach((l,i)=>{
     msg+=`Lance ${i+1}: ${formatarTempo(l.inicio)}-${formatarTempo(l.fim)} (${l.dur.toFixed(1)}s)\n`;
