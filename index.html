@@ -123,16 +123,19 @@ li{
   background:#1e1e1e;
   padding:10px;
   border-top:1px solid #333;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
 }
 
-#total{
-  font-weight:bold;
-  margin-bottom:6px;
+#footer > div{
+  flex:1 1 auto;
 }
 
-#economia{
-  font-size:12px;
-  color:#2ecc71;
+#footer .enviar{
+  flex:0 0 auto;
+  margin:0;
 }
 </style>
 </head>
@@ -167,24 +170,25 @@ allow="autoplay; fullscreen"></iframe>
 </div>
 
 <div id="footer">
-  <div id="total">Total: R$0 (0 lances)</div>
-  <div id="economia"></div>
+  <div>
+    <div id="total">Total: R$0 (0 lances)</div>
+    <div id="economia"></div>
+  </div>
   <button class="enviar" onclick="enviar()">📤 Enviar Pedido</button>
 </div>
 
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
-const player=new Vimeo.Player('player');
+const player = new Vimeo.Player('player');
 
-const timeline=document.getElementById("timeline");
-const progress=document.getElementById("progress");
-const lista=document.getElementById("lista");
-const btn=document.getElementById("btnPlayPause");
+const timeline = document.getElementById("timeline");
+const progress = document.getElementById("progress");
+const lista = document.getElementById("lista");
+const btn = document.getElementById("btnPlayPause");
 
-let inicio=null,lances=[],ultimoTempo=0,interval=null;
-let economiaAnterior=0;
-const preco=15;
+let inicio = null, lances = [], ultimoTempo = 0;
+const preco = 15;
 
 // play/pause sync
 player.on('play',()=>btn.innerText="⏸️");
@@ -192,19 +196,12 @@ player.on('pause',()=>btn.innerText="▶️");
 
 // timeline + lógica
 player.on('timeupdate',d=>{
-  if(d.duration){
-    progress.style.width=(d.seconds/d.duration*100)+"%";
-  }
-
-  if(d.seconds<ultimoTempo-0.5)reset();
+  if(d.duration) progress.style.width=(d.seconds/d.duration*100)+"%";
+  if(d.seconds<ultimoTempo-0.5) reset();
   ultimoTempo=d.seconds;
-
-  if(inicio!==null && d.seconds-inicio>=10){
-    finalizar(d.seconds);
-  }
+  if(inicio!==null && d.seconds-inicio>=10) finalizar(d.seconds);
 });
 
-// clicar timeline
 timeline.onclick=e=>{
   const r=timeline.getBoundingClientRect();
   const p=(e.clientX-r.left)/r.width;
@@ -222,13 +219,10 @@ function inicioLance(){
   player.play();
   player.getCurrentTime().then(t=>{
     inicio=t;
-
     interval=setInterval(()=>{
       player.getCurrentTime().then(sec=>{
         let dur=sec-inicio;
-
         contadorLance.innerText=`⏱ Duração do lance: ${dur.toFixed(1)} s`;
-
         if(dur>10){
           contadorLance.classList.add("alerta","piscar");
         }else{
@@ -240,18 +234,17 @@ function inicioLance(){
 }
 
 function fimLance(){
-  if(inicio===null)return alert("Marque início");
+  if(inicio===null) return alert("Marque início");
   player.getCurrentTime().then(f=>finalizar(f));
 }
 
 function finalizar(fim){
   let dur=fim-inicio;
-  if(dur<3)return;
+  if(dur<3) return;
 
   let novo={inicio,fim,dur};
 
-  if(lances.some(l=>Math.abs(l.inicio-novo.inicio)<0.5))return reset();
-
+  if(lances.some(l=>Math.abs(l.inicio-novo.inicio)<0.5)) return reset();
   if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){
     alert("Sobreposição!");
     return reset();
@@ -259,15 +252,14 @@ function finalizar(fim){
 
   lances.push(novo);
   lances.sort((a,b)=>a.inicio-b.inicio);
-
   reset();
   render();
 }
 
 function calcDesc(i){
   let q=i+1;
-  if(q===1)return 0;
-  if(q>=10)return 0.2;
+  if(q===1) return 0;
+  if(q>=10) return 0.2;
   return 0.1+((q-2)*(0.1/8));
 }
 
@@ -280,25 +272,19 @@ function render(){
   player.getDuration().then(duracao=>{
 
     lances.forEach((l,i)=>{
-
       let desc=calcDesc(i);
       let valor=preco*(1-desc);
-
-      total+=valor;
-      totalSem+=preco;
+      total += valor;
+      totalSem += preco;
 
       let li=document.createElement("li");
-
       let info=document.createElement("div");
       info.className="info";
-      info.innerHTML=`
-        <span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)}</span>
-        <span class="valor">R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span>
-      `;
+      info.innerHTML=`<span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)}</span>
+                        <span class="valor">R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span>`;
 
       let v=document.createElement("button");
-      v.className="ver";
-      v.innerText="▶️ Ver";
+      v.className="ver"; v.innerText="▶️ Ver";
       v.onclick=()=>{
         player.setCurrentTime(l.inicio);
         document.querySelectorAll("li").forEach(x=>x.classList.remove("ativo"));
@@ -306,8 +292,7 @@ function render(){
       };
 
       let r=document.createElement("button");
-      r.className="remover";
-      r.innerText="🗑️ Remover";
+      r.className="remover"; r.innerText="🗑️ Remover";
       r.onclick=()=>{
         lances=lances.filter(x=>x!==l);
         render();
@@ -320,32 +305,21 @@ function render(){
       li.append(info,box);
       lista.appendChild(li);
 
-      // timeline faixa
       let div=document.createElement("div");
       div.className="range";
-
       let left=(l.inicio/duracao)*100;
       let width=((l.fim-l.inicio)/duracao)*100;
-
       div.style.left=left+"%";
       div.style.width=width+"%";
-
-      div.onclick=(e)=>{
-        e.stopPropagation();
-        player.setCurrentTime(l.inicio);
-      };
-
+      div.onclick=(e)=>{ e.stopPropagation(); player.setCurrentTime(l.inicio); };
       timeline.appendChild(div);
     });
 
     let economia=totalSem-total;
-
     document.getElementById("total").innerText=
       `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
-
     document.getElementById("economia").innerText=
-      economia>0?`💸 Economizou R$${economia.toFixed(2)}`:"";
-
+      economia>0?`🤑 Economizou R$${economia.toFixed(2)}`:"";
   });
 }
 
@@ -363,11 +337,24 @@ function pular(s){
   player.getCurrentTime().then(t=>player.setCurrentTime(t+s));
 }
 
+// FUNÇÃO DE ENVIO SIMPLIFICADA
 function enviar(){
-  let msg="⚽ Pedido Letto\n\n";
+  let videoId = '1175798353';
+  let videoLink = `https://lettoproducoes.github.io/lances/?video=${videoId}`;
+  let msg = "⚽ Pedido Letto\n\n";
+  msg += `🎬 Vídeo completo: ${videoLink}\n\n`;
+
   lances.forEach((l,i)=>{
-    msg+=`Lance ${i+1}: ${fmt(l.inicio)}-${fmt(l.fim)}\n`;
+    msg += `Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`;
   });
+
+  let total = lances.reduce((acc,i,index)=> acc + preco*(1-calcDesc(index)),0);
+  let totalSem = lances.length * preco;
+  let descontoFinal = totalSem - total;
+
+  msg += `\n🤑 Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''})\n`;
+  msg += `✅ Desconto final: ${descontoFinal.toFixed(2)}`;
+
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
 }
 </script>
