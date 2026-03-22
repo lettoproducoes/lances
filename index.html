@@ -118,10 +118,10 @@ li{
 
 .ativo{background:#2a2a2a;}
 
-/* RODAPÉ FIXO */
+/* RODAPÉ FIXO - Ajustado para Safari/iOS */
 #footer{
   background:#1e1e1e;
-  padding:10px;
+  padding:15px 10px 25px 10px; /* padding-bottom maior para evitar sobreposição */
   border-top:1px solid #333;
   display:flex;
   justify-content:space-between;
@@ -136,6 +136,7 @@ li{
 #footer .enviar{
   flex:0 0 auto;
   margin:0;
+  padding:10px 15px; /* aumenta área clicável do botão */
 }
 </style>
 </head>
@@ -319,7 +320,7 @@ function render(){
     document.getElementById("total").innerText=
       `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
     document.getElementById("economia").innerText=
-      economia>0?`🤑 Economizou R$${economia.toFixed(2)}`:"";
+      economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
   });
 }
 
@@ -337,12 +338,12 @@ function pular(s){
   player.getCurrentTime().then(t=>player.setCurrentTime(t+s));
 }
 
-// FUNÇÃO DE ENVIO SIMPLIFICADA
+// FUNÇÃO DE ENVIO COM EMOJIS COMPATÍVEIS
 function enviar(){
   let videoId = '1175798353';
   let videoLink = `https://lettoproducoes.github.io/lances/?video=${videoId}`;
   let msg = "⚽ Pedido Letto\n\n";
-  msg += `🎬 Vídeo completo: ${videoLink}\n\n`;
+  msg += `🏟️ Vídeo completo: ${videoLink}\n\n`;
 
   lances.forEach((l,i)=>{
     msg += `Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`;
@@ -352,8 +353,8 @@ function enviar(){
   let totalSem = lances.length * preco;
   let descontoFinal = totalSem - total;
 
-  msg += `\n🤑 Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''})\n`;
-  msg += `✅ Desconto final: ${descontoFinal.toFixed(2)}`;
+  msg += `\n💰 Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''})\n`;
+  msg += `✔️ Desconto final: ${descontoFinal.toFixed(2)}`;
 
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
 }
