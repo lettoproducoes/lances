@@ -1,20 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Letto Produções</title>
 
 <style>
-html, body {
+body{
   margin:0;
   font-family:Arial;
   background:#121212;
   color:#eee;
   display:flex;
   flex-direction:column;
-  width: 100%;
-  height: 100%;  
-  background: #000; /* evita bordas brancas */
+  height:100vh;
 }
 
 h2{
@@ -25,15 +23,7 @@ h2{
 }
 
 /* PLAYER */
-#player{
-  width: 100vw;       /* largura total da viewport */
-  max-width: 100%;    /* garante que não ultrapasse a tela */
-  height: max(56.25vw, 100vh); /* mantém proporção 16:9 */
-  max-height: 100vh;
-  border: none;
-  display: block;
-  margin: 0 auto;
-}
+#player{width:100%;height:220px;border:none;}
 
 /* TIMELINE */
 #timeline{
@@ -100,11 +90,10 @@ button{
 @keyframes piscar{50%{opacity:.5;}}
 
 /* LISTA */
-#lancesContainer {
+#lancesContainer{
   flex:1;
   overflow:auto;
   padding:8px;
-  padding-bottom: 120px; /* altura do footer */
 }
 
 li{
@@ -143,11 +132,7 @@ li{
 .remover{background:#e53935;}
 
 /* RODAPÉ FIXO */
-#footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+#footer{
   background:#1e1e1e;
   padding:15px 10px 25px 10px;
   border-top:1px solid #333;
@@ -155,7 +140,6 @@ li{
   justify-content:space-between;
   align-items:flex-start;
   flex-wrap:wrap;
-  z-index:10;
 }
 
 #footer > div{
@@ -679,7 +663,7 @@ function render() {
 
       li.innerHTML = `
         <div class="info">
-          <span>${i + 1} ${formatTime(l.inicio)}-${formatTime(l.fim)} (${l.dur.toFixed(1)}s)</span>
+          <span>Lance ${i + 1} ${formatTime(l.inicio)} - ${formatTime(l.fim)} (${l.dur.toFixed(1)}s)</span>
           <span class="valor">💰 Esse lance: R$${valor.toFixed(2)} (-${Math.round(desc * 100)}%)</span>
         </div>
       `;
