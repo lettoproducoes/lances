@@ -28,7 +28,8 @@ h2{
 #player{
   width: 100vw;       /* largura total da viewport */
   max-width: 100%;    /* garante que não ultrapasse a tela */
-  height: calc(100vw * 9 / 16); /* mantém proporção 16:9 */
+  height: max(56.25vw, 100vh); /* mantém proporção 16:9 */
+  max-height: 100vh;
   border: none;
   display: block;
   margin: 0 auto;
