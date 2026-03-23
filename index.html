@@ -340,6 +340,26 @@ const contadorLance = document.getElementById("contadorLance"); // corrigido
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
 const preco = 1;
 
+let dadosSalvos = localStorage.getItem('pedidoLetto');
+
+if(dadosSalvos){
+  try{
+    const dados = JSON.parse(dadosSalvos);
+
+    lances = dados.lances || [];
+
+    setTimeout(()=>{
+      if(dados.nome) document.getElementById('nome').value = dados.nome;
+      if(dados.telefone) document.getElementById('telefone').value = dados.telefone;
+      if(dados.atleta) document.getElementById('atleta').value = dados.atleta;
+      if(dados.clube) document.getElementById('clube').value = dados.clube;
+    }, 200);
+
+  }catch(e){
+    lances = [];
+  }
+}
+
 let lancesSalvos = localStorage.getItem('lances');
 
 if(lancesSalvos){
@@ -417,6 +437,7 @@ function finalizar(fim){
   if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){ alert("Sobreposição!"); reset(); return; }
 
   lances.push(novo);
+  salvarTudo();
   salvarLocal();
   lances.sort((a,b)=>a.inicio-b.inicio);
   clearInterval(interval);
@@ -465,7 +486,7 @@ function render(){
       r.innerText="🗑️ Remover";
       r.onclick=()=>{
         lances = lances.filter(x=>x!==l);
-		salvarLocal();
+		salvarTudo();
         render();
       };
 
@@ -574,6 +595,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   window.location.href = `https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`;
   
   localStorage.removeItem('lances');
+  localStorage.removeItem('pedidoLetto');
 
 });
 
@@ -638,6 +660,29 @@ telInput.addEventListener('input', (e)=>{
 function salvarLocal(){
   localStorage.setItem('lances', JSON.stringify(lances));
 }
+
+if(lances.length){
+  render();
+}
+
+function salvarTudo(){
+  const dados = {
+    lances: lances,
+    nome: document.getElementById('nome')?.value || '',
+    telefone: document.getElementById('telefone')?.value || '',
+    atleta: document.getElementById('atleta')?.value || '',
+    clube: document.getElementById('clube')?.value || ''
+  };
+
+  localStorage.setItem('pedidoLetto', JSON.stringify(dados));
+}
+
+['nome','telefone','atleta','clube'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el){
+    el.addEventListener('input', salvarTudo);
+  }
+});
 
 if(lances.length){
   render();
