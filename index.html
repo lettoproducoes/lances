@@ -658,6 +658,12 @@ function render(){
 
     document.getElementById("total").innerText=`Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
     document.getElementById("economia").innerText=economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
+	
+	if(lances.length >= 3 && lances.length < 10){
+	  document.getElementById("economia").innerText += 
+		" • Adicione mais lances para aumentar o desconto";
+	}
+	
   });
 }
 
