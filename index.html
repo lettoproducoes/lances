@@ -291,7 +291,7 @@ li{
 
 #formulario input{
   width:100%;
-  max-width:400px; /* largura controlada (fica bonito no desktop) */
+  max-width:400px;
   padding:12px;
   border-radius:8px;
   border:none;
@@ -513,12 +513,7 @@ player.on('timeupdate', d => {
   }
   if(d.seconds < ultimoTempo - 0.5) reset();
   ultimoTempo = d.seconds;
-
-  if(inicio !== null && d.seconds - inicio >= 10){
-    finalizar(d.seconds);
-  }
-  
-  // salva a cada 2 segundos (evita excesso de gravação)
+ 
   if(d.seconds - ultimoSalvamento > 3){
    localStorage.setItem('tempoVideo_'+videoId, d.seconds);
    ultimoSalvamento = d.seconds;
@@ -548,38 +543,90 @@ function inicioLance(){
     inicio=t;
     interval=setInterval(()=>{
       player.getCurrentTime().then(sec=>{
-        let dur=sec-inicio;
-        contadorLance.innerText=`⏱ Duração do lance: ${dur.toFixed(1)} s`;
-        if(dur>=10) finalizar(sec);
-        if(dur>10) contadorLance.classList.add("alerta","piscar");
+        let dur = sec - inicio;
+        contadorLance.innerText = `⏱ Duração do lance: ${dur.toFixed(1)} s`;
+
+        // Finaliza automaticamente se atingir o máximo de 15s
+        if(dur >= 15){
+          clearInterval(interval);
+          contadorLance.classList.remove("alerta","piscar");
+          player.pause().then(()=>{
+            alert("O lance atingiu o tempo máximo de 15 segundos e foi finalizado automaticamente.");
+            finalizar(sec);
+          });
+        }
+
+        // Alerta visual se passar do limite
+        if(dur > 15) contadorLance.classList.add("alerta","piscar");
         else contadorLance.classList.remove("alerta","piscar");
       });
-    },100);
+    }, 100);
   });
 }
 
+// Atualização no timeupdate do player
+player.on('timeupdate', d => {
+  if(d.duration){
+    let percent = (d.seconds/d.duration)*100;
+    progress.style.width = percent + "%";
+    if(!arrastando) handle.style.left = percent + "%";
+  }
+  if(d.seconds < ultimoTempo - 0.5) reset();
+  ultimoTempo = d.seconds;
+
+  // Finaliza lance automaticamente se ultrapassar 15s
+  if(inicio !== null && d.seconds - inicio >= 15){
+    clearInterval(interval);
+    contadorLance.classList.remove("alerta","piscar");
+    player.pause().then(()=>{
+      alert("O lance atingiu o tempo máximo de 15 segundos e foi finalizado automaticamente.");
+      finalizar(d.seconds);
+    });
+  }
+
+  if(d.seconds - ultimoSalvamento > 3){
+    localStorage.setItem('tempoVideo_'+videoId, d.seconds);
+    ultimoSalvamento = d.seconds;
+  }
+});
+
 function fimLance(){
-  if(inicio===null) return alert("Marque início");
+  if(inicio===null) return alertPause("Marque início");
   player.getCurrentTime().then(f=>finalizar(f));
 }
 
 function finalizar(fim){
-  if(inicio===null) return;
-  let dur=fim-inicio;
+  if(inicio === null) return;
+  let dur = fim - inicio;
 
-  if(dur<3){
-    alert("O lance deve ter no mínimo 3 segundos");
+  if(dur < 3){
+    alertPause("O lance deve ter no mínimo 3 segundos");
     reset();
     return;
   }
 
-  let novo={inicio,fim,dur};
-  if(lances.some(l=>Math.abs(l.inicio - novo.inicio) < 1)){ reset(); return; }
-  if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){ alert("Sobreposição!"); reset(); return; }
+  let novo = {inicio, fim, dur};
+
+  // Verifica sobreposição
+  let sobreposto = lances.findIndex(l => novo.inicio < l.fim && novo.fim > l.inicio);
+  if(sobreposto !== -1){
+    // Pausa o vídeo antes de mostrar o alerta
+    player.pause().then(()=>{
+      alertPause(`Sobreposição! Lance atual conflita com o Lance ${sobreposto + 1}`);
+      reset();
+    });
+    return;
+  }
+
+  // Verifica lances com início muito próximo (mesmo ponto)
+  if(lances.some(l => Math.abs(l.inicio - novo.inicio) < 1)){
+    reset();
+    return;
+  }
 
   lances.push(novo);
   salvarTudo();
-  lances.sort((a,b)=>a.inicio-b.inicio);
+  lances.sort((a,b) => a.inicio - b.inicio);
   clearInterval(interval);
   reset();
   render();
@@ -627,13 +674,17 @@ function render() {
       let r = document.createElement("button");
       r.className = "remover";
       r.innerText = "🗑️ Remover";
-      r.onclick = () => {
-        if (confirm("Remover este lance?")) {
-          lances = lances.filter(x => x !== l);
-          salvarTudo();
-          render();
-        }
-      };
+	r.onclick = async () => {
+	  await player.pause(); // pausa o vídeo primeiro
+	  if (confirm(`Remover o Lance ${i + 1}?`)) {
+		lances = lances.filter(x => x !== l);
+		salvarTudo();
+		render();
+	  } else {
+		// se o usuário cancelar, você pode opcionalmente retomar o vídeo
+		// await player.play();
+	  }
+	};
 
       let box = document.createElement("div");
       box.className = "linhaBotoes";
@@ -685,7 +736,7 @@ function pular(s){
 
 function enviar(){
   if(lances.length === 0){
-    alert("Adicione pelo menos 1 lance");
+    alertPause("Adicione pelo menos 1 lance");
     return;
   }
   
@@ -715,7 +766,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
 	const equipeValido = validarCampo(document.getElementById('equipe'),'texto');
 
 	if(!nomeValido || !telValido || !atletaValido || !equipeValido){
-	  alert("Preencha corretamente todos os campos!");
+	  alertPause("Preencha corretamente todos os campos!");
 	  return;
 	}
 	
@@ -872,6 +923,12 @@ document.getElementById('atleta').addEventListener('input', e=>{
 document.getElementById('equipe').addEventListener('input', e=>{
   validarCampo(e.target,'texto');
 });
+
+function alertPause(msg){
+  player.pause().then(() => {
+    alert(msg);
+  });
+}
 
 document.getElementById('resumo-lances').innerText =
   `${lances.length} lance${lances.length != 1 ? 's' : ''} selecionado${lances.length != 1 ? 's' : ''}`;
