@@ -592,72 +592,80 @@ function calcDesc(i){
   return Math.min(0.2, (q-1)*0.02);
 }
 
-function render(){
-  lista.innerHTML="";
-  timeline.querySelectorAll(".range").forEach(e=>e.remove());
+function render() {
+  lista.innerHTML = "";
+  timeline.querySelectorAll(".range").forEach(e => e.remove());
 
-  let total=0,totalSem=0;
+  let total = 0,
+      totalSem = 0;
 
-  player.getDuration().then(duracao=>{
-    lances.forEach((l,i)=>{
-      let desc=calcDesc(i);
-      let valor=preco*(1-desc);
+  player.getDuration().then(duracao => {
+    lances.forEach((l, i) => {
+      let desc = calcDesc(i);
+      let valor = preco * (1 - desc);
 
-      total+=valor;
-      totalSem+=preco;
+      total += valor;
+      totalSem += preco;
 
-      let li=document.createElement("li");
+      // Cria item da lista
+      let li = document.createElement("li");
 
-      let info=document.createElement("div");
-      info.className="info";
-      li.innerHTML=`<div class="info"><span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span><span class="valor">💰 Esse lance: R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span></div>`;
+      li.innerHTML = `<div class="info">
+                        <span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span>
+                        <span class="valor">💰 Esse lance: R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span>
+                      </div>`;
 
-      let v=document.createElement("button");
-      v.className="ver";
-      v.innerText="▶️ Ver";
-      v.onclick=()=>{
+      // Botões
+      let v = document.createElement("button");
+      v.className = "ver";
+      v.innerText = "▶️ Ver";
+      v.onclick = () => {
         player.setCurrentTime(l.inicio);
-        document.querySelectorAll("li").forEach(x=>x.classList.remove("ativo"));
+        document.querySelectorAll("li").forEach(x => x.classList.remove("ativo"));
         li.classList.add("ativo");
       };
 
-      let r=document.createElement("button");
-      r.className="remover";
-      r.innerText="🗑️ Remover";
-      r.onclick=()=>{
-	      if(confirm("Remover este lance?")){
-			lances = lances.filter(x=>x!==l);
-			salvarTudo();
-			render();
-		  }
-	  };
-      let box=document.createElement("div");
-      box.className="linhaBotoes";
-      box.append(v,r);
+      let r = document.createElement("button");
+      r.className = "remover";
+      r.innerText = "🗑️ Remover";
+      r.onclick = () => {
+        if (confirm("Remover este lance?")) {
+          lances = lances.filter(x => x !== l);
+          salvarTudo();
+          render();
+        }
+      };
 
-      li.append(info,box);
+      let box = document.createElement("div");
+      box.className = "linhaBotoes";
+      box.append(v, r);
+      li.appendChild(box);
+
       lista.appendChild(li);
 
-      let div=document.createElement("div");
-      div.className="range";
-      let left=(l.inicio/duracao)*100;
-      let width=((l.fim-l.inicio)/duracao)*100;
-      div.style.left=left+"%";
-      div.style.width=width+"%";
-      div.onclick=(e)=>{
+      // Adiciona range na timeline
+      let div = document.createElement("div");
+      div.className = "range";
+      let left = (l.inicio / duracao) * 100;
+      let width = ((l.fim - l.inicio) / duracao) * 100;
+      div.style.left = left + "%";
+      div.style.width = width + "%";
+      div.onclick = (e) => {
         e.stopPropagation();
         player.setCurrentTime(l.inicio);
       };
 
-      timeline.appendChild(div);	  
-	  lista.scrollTop = lista.scrollHeight;
-    });	
+      timeline.appendChild(div);
+    });
 
-    let economia=totalSem-total;
+    // Rola para o último lance após a DOM atualizar
+    requestAnimationFrame(() => {
+      lista.scrollTop = lista.scrollHeight;
+    });
 
-    document.getElementById("total").innerText=`Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
-    document.getElementById("economia").innerText=economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
-	
+    let economia = totalSem - total;
+    document.getElementById("total").innerText = `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''})`;
+    document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
   });
 }
 
