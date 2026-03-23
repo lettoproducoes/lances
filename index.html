@@ -369,21 +369,19 @@ li{
 </div>
 
 <div id="tela-confirmacao">
-  <h2>⚡ Confirme seu Pedido ⚡</h2>
+  <h2>⚡ Finalizar Pedido</h2>
 
   <p>
     Confira os lances e preencha seus dados:<br>
 	<p>
 	⚠️ <strong>Atenção!</strong><br><br>
 
-	Na tela de pagamento, utilize 
-	<strong style="color:#2ecc71;">exatamente o valor abaixo</strong>.<br>
+	Use <strong style="color:#2ecc71;">o valor exato</strong> na hora de pagar.<br>
 
-	❗ Pagamentos com valor diferente 
-	<strong style="color:#e74c3c;">não serão processados automaticamente</strong> 
-	e podem atrasar o início da edição dos lances.<br>
+	❗ Valor diferente = 
+	<strong style="color:#e74c3c;">pedido não identificado automaticamente</strong>.<br>
 
-	💡 Para agilizar seu pedido, confira o valor antes de finalizar.
+	👍 Confira antes de pagar pra evitar atraso.
 	</p>
   </p>
 
@@ -391,16 +389,22 @@ li{
     <div style="font-size:13px;opacity:0.7;">Valor total</div>
     <div id="total-confirmacao">R$0</div>
   </div>
+  <div style="text-align:center;font-size:13px;color:#aaa;margin-top:5px;">
+	💡 Quanto mais lances, maior o desconto automático
+  </div>    
+  <div style="text-align:center;font-size:13px;color:#2ecc71;margin-top:8px;">
+	🔥 Mais de 100 atletas já utilizaram este serviço
+  </div>
 
   <!-- FORMULÁRIO -->
 	<div id="formulario">
 
 	  <div class="input-group">
-		<input type="text" id="nome" placeholder="Nome Completo Responsável" required>
+		<input type="text" id="nome" placeholder="Seu nome completo" required>
 	  </div>
 
 	  <div class="input-group">
-		<input type="tel" id="telefone" placeholder="Telefone (WhatsApp)" required>
+		<input type="tel" id="telefone" placeholder="Seu WhatsApp com DDD" required>
 	  </div>
 
 	  <div class="input-group">
@@ -408,14 +412,22 @@ li{
 	  </div>
 
 	  <div class="input-group">
-		<input type="text" id="clube" placeholder="Treinador / Clube" required>
+		<input type="text" id="equipe" placeholder="Treinador e equipe" required>
 	  </div>
 
 	</div>
 
-  <ul id="lista-confirmacao"></ul>
+	<div style="text-align:center;margin:10px 0;">
+	  <div style="font-size:13px;color:#aaa;">Resumo do pedido</div>
+	  <div style="font-size:16px;font-weight:bold;">
+		🎬 <span id="resumo-lances">0 lances</span>
+	  </div>
+	</div>
 
   <div id="confirmacao-footer">
+	<div style="text-align:center;font-size:12px;color:#aaa;margin-bottom:8px;">
+	⏱ Pedidos são processados por ordem de pagamento
+	</div>
     <button onclick="voltarEdicao()" style="width:100%;margin-bottom:8px;padding:10px;background:#444;border:none;border-radius:8px;color:#fff;">← Voltar e editar</button>
 	<button id="btn-confirmar">💰 Finalizar e Enviar Pedido</button>
   </div>
@@ -476,7 +488,7 @@ if(dadosSalvos){
       if(dados.nome) document.getElementById('nome').value = dados.nome;
       if(dados.telefone) document.getElementById('telefone').value = dados.telefone;
       if(dados.atleta) document.getElementById('atleta').value = dados.atleta;
-      if(dados.clube) document.getElementById('clube').value = dados.clube;
+      if(dados.equipe) document.getElementById('equipe').value = dados.equipe;
     }, 200);
 
   }catch(e){
@@ -657,18 +669,6 @@ function enviar(){
 
   document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
 
-  const ul = document.getElementById('lista-confirmacao');
-  ul.innerHTML = '';
-
-  lances.forEach((l,i)=>{
-    let li = document.createElement('li');
-    let desc = calcDesc(i);
-    let valor = preco*(1-desc);
-
-    li.innerHTML = `<span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span><span>R$${valor.toFixed(2)}</span>`;
-    ul.appendChild(li);
-  });
-
   document.getElementById('tela-confirmacao').style.display = 'flex';
   document.getElementById('footer').style.display = 'none';
 }
@@ -679,15 +679,15 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   const nome = document.getElementById('nome').value.trim();
   const telefone = document.getElementById('telefone').value.trim();
   const atleta = document.getElementById('atleta').value.trim();
-  const clube = document.getElementById('clube').value.trim();
+  const equipe = document.getElementById('equipe').value.trim();
 
   // VALIDAÇÃO
 	const nomeValido = validarCampo(document.getElementById('nome'),'texto');
 	const telValido = validarCampo(document.getElementById('telefone'),'telefone');
 	const atletaValido = validarCampo(document.getElementById('atleta'),'texto');
-	const clubeValido = validarCampo(document.getElementById('clube'),'texto');
+	const equipeValido = validarCampo(document.getElementById('equipe'),'texto');
 
-	if(!nomeValido || !telValido || !atletaValido || !clubeValido){
+	if(!nomeValido || !telValido || !atletaValido || !equipeValido){
 	  alert("Preencha corretamente todos os campos!");
 	  return;
 	}
@@ -700,7 +700,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   msg+=`👤 Nome: ${nome}\n`;
   msg+=`📱 WhatsApp: ${telefone}\n`;
   msg+=`🏃 Atleta: ${atleta}\n`;
-  msg+=`🏆 Clube/Treinador: ${clube}\n\n`;
+  msg+=`🏆 equipe/Treinador: ${equipe}\n\n`;
 
   msg+=`🎥 Vídeo completo:\n${videoLink}\n\n`;
 
@@ -787,13 +787,13 @@ function salvarTudo(){
     nome: document.getElementById('nome')?.value || '',
     telefone: document.getElementById('telefone')?.value || '',
     atleta: document.getElementById('atleta')?.value || '',
-    clube: document.getElementById('clube')?.value || ''
+    equipe: document.getElementById('equipe')?.value || ''
   };
 
   localStorage.setItem('pedidoLetto_${videoId}', JSON.stringify(dados));
 }
 
-['nome','telefone','atleta','clube'].forEach(id=>{
+['nome','telefone','atleta','equipe'].forEach(id=>{
   const el = document.getElementById(id);
   if(el){
     el.addEventListener('input', salvarTudo);
@@ -842,9 +842,12 @@ document.getElementById('atleta').addEventListener('input', e=>{
   validarCampo(e.target,'texto');
 });
 
-document.getElementById('clube').addEventListener('input', e=>{
+document.getElementById('equipe').addEventListener('input', e=>{
   validarCampo(e.target,'texto');
 });
+
+document.getElementById('resumo-lances').innerText =
+  `${lances.length} lance${lances.length != 1 ? 's' : ''} selecionado${lances.length != 1 ? 's' : ''}`;
 
 let ultimoSalvamento = 0;
 
