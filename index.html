@@ -162,21 +162,28 @@ li{
   height:100%;
   background:#121212;
   display:flex;
-  justify-content:center;
-  align-items:center;
   flex-direction:column;
   padding:20px;
   z-index:999;
   display:none;
 }
+
+#conteudo-confirmacao{
+  flex:1;
+  overflow:auto;
+}
+
 #tela-confirmacao h2{
   margin-bottom:10px;
+  text-align:center;
 }
+
 #tela-confirmacao p{
   text-align:center;
   margin-bottom:15px;
   line-height:1.4em;
 }
+
 #total-confirmacao{
   font-size:28px;
   font-weight:bold;
@@ -184,12 +191,14 @@ li{
   margin:15px 0;
   text-align:center;
 }
+
 #lista-confirmacao{
   width:100%;
   max-height:200px;
   overflow:auto;
   margin-bottom:20px;
 }
+
 #lista-confirmacao li{
   background:#181818;
   margin:4px 0;
@@ -199,14 +208,18 @@ li{
   display:flex;
   justify-content:space-between;
 }
+
+/* BOTÃO FIXO */
 #btn-confirmar{
-  padding:12px 20px;
+  position:sticky;
+  bottom:0;
+  width:100%;
+  padding:15px;
   font-size:16px;
   background:#3498db;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   color:white;
-  cursor:pointer;
 }
 </style>
 </head>
@@ -215,7 +228,6 @@ li{
 
 <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
 
-<!-- PLAYER -->
 <iframe id="player" allow="autoplay; fullscreen"></iframe>
 
 <div id="timeline">
@@ -250,224 +262,27 @@ li{
 
 <!-- TELA DE CONFIRMAÇÃO -->
 <div id="tela-confirmacao">
-  <h2>⚡ Confirme seu Pedido ⚡</h2>
-  <p>
-    Confira abaixo os lances selecionados antes de enviar:<br>
-    ⚠️ Na tela de pagamento do MercadoPago, preencha **exatamente este valor**, caso contrário a edição dos lances **não será iniciada**.
-  </p>
-  <ul id="lista-confirmacao"></ul>
-  <div id="total-confirmacao">R$0</div>
+  <div id="conteudo-confirmacao">
+    <h2>⚡ Confirme seu Pedido ⚡</h2>
+    <p>
+      Confira abaixo os lances selecionados antes de enviar:<br>
+      ⚠️ Na tela de pagamento do MercadoPago, preencha **exatamente este valor**, caso contrário a edição dos lances **não será iniciada**.
+    </p>
+    <ul id="lista-confirmacao"></ul>
+    <div id="total-confirmacao">R$0</div>
+  </div>
   <button id="btn-confirmar">📤 Enviar Pedido</button>
 </div>
 
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
-// Recebe o parâmetro "video" da URL
-function getVideoId(){
-  const params = new URLSearchParams(window.location.search);
-  return params.get('video') || '1175798353';
-}
-const videoId = getVideoId();
-document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
-const player = new Vimeo.Player('player');
-
-const timeline = document.getElementById("timeline");
-const progress = document.getElementById("progress");
-const lista = document.getElementById("lista");
-const btn = document.getElementById("btnPlayPause");
-const handle = document.getElementById("handle");
-
-let inicio = null, lances = [], ultimoTempo = 0, interval = null;
-const preco = 15;
-
-// Play/pause sync
-player.on('play',()=>btn.innerText="⏸️");
-player.on('pause',()=>btn.innerText="▶️");
-
-// Atualiza timeline e bolinha
-player.on('timeupdate', d => {
-  if(d.duration){
-    let percent = (d.seconds/d.duration)*100;
-    progress.style.width = percent + "%";
-    if(!arrastando) handle.style.left = percent + "%";
-  }
-  if(d.seconds < ultimoTempo - 0.5) reset();
-  ultimoTempo = d.seconds;
-
-  if(inicio !== null && d.seconds - inicio >= 10){
-    finalizar(d.seconds);
-  }
-});
-
-// Timeline click
-timeline.onclick=e=>{
-  const r=timeline.getBoundingClientRect();
-  const p=(e.clientX-r.left)/r.width;
-  player.getDuration().then(d=>player.setCurrentTime(d*p));
-};
-
-// Marcação
-function reset(){
-  inicio=null;
-  clearInterval(interval);
-  contadorLance.innerText="⏱ Duração do lance: 0 s";
-  contadorLance.classList.remove("alerta","piscar");
-}
-
-function inicioLance(){
-  player.play();
-  player.getCurrentTime().then(t=>{
-    clearInterval(interval);
-    inicio=t;
-    interval=setInterval(()=>{
-      player.getCurrentTime().then(sec=>{
-        let dur=sec-inicio;
-        contadorLance.innerText=`⏱ Duração do lance: ${dur.toFixed(1)} s`;
-        if(dur>=10) finalizar(sec);
-        if(dur>10) contadorLance.classList.add("alerta","piscar");
-        else contadorLance.classList.remove("alerta","piscar");
-      });
-    },100);
-  });
-}
-
+// ALERTA AO CLICAR EM MARCAR FIM
 function fimLance(){
   if(inicio===null) return alert("Marque início");
+  alert("⚠️ O tempo mínimo do lance é de 3 segundos");
   player.getCurrentTime().then(f=>finalizar(f));
 }
-
-function finalizar(fim){
-  if(inicio===null) return;
-  let dur=fim-inicio;
-  if(dur<3){ reset(); return; }
-  let novo={inicio,fim,dur};
-  if(lances.some(l=>Math.abs(l.inicio-novo.inicio)<0.5)){ reset(); return; }
-  if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){ alert("Sobreposição!"); reset(); return; }
-  lances.push(novo);
-  lances.sort((a,b)=>a.inicio-b.inicio);
-  clearInterval(interval);
-  reset();
-  render();
-}
-
-function calcDesc(i){
-  let q=i+1;
-  if(q===1) return 0;
-  if(q>=10) return 0.2;
-  return 0.1+((q-2)*(0.1/8));
-}
-
-function render(){
-  lista.innerHTML="";
-  timeline.querySelectorAll(".range").forEach(e=>e.remove());
-  let total=0,totalSem=0;
-  player.getDuration().then(duracao=>{
-    lances.forEach((l,i)=>{
-      let desc=calcDesc(i);
-      let valor=preco*(1-desc);
-      total+=valor;
-      totalSem+=preco;
-
-      let li=document.createElement("li");
-      let info=document.createElement("div");
-      info.className="info";
-      info.innerHTML=`<span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)}</span>
-                        <span class="valor">R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span>`;
-
-      let v=document.createElement("button");
-      v.className="ver"; v.innerText="▶️ Ver";
-      v.onclick=()=>{ player.setCurrentTime(l.inicio); document.querySelectorAll("li").forEach(x=>x.classList.remove("ativo")); li.classList.add("ativo"); };
-
-      let r=document.createElement("button");
-      r.className="remover"; r.innerText="🗑️ Remover";
-      r.onclick=()=>{ lances=lances.filter(x=>x!==l); render(); };
-
-      let box=document.createElement("div");
-      box.className="linhaBotoes";
-      box.append(v,r);
-
-      li.append(info,box);
-      lista.appendChild(li);
-
-      let div=document.createElement("div");
-      div.className="range";
-      let left=(l.inicio/duracao)*100;
-      let width=((l.fim-l.inicio)/duracao)*100;
-      div.style.left=left+"%";
-      div.style.width=width+"%";
-      div.onclick=(e)=>{ e.stopPropagation(); player.setCurrentTime(l.inicio); };
-      timeline.appendChild(div);
-    });
-
-    let economia=totalSem-total;
-    document.getElementById("total").innerText=`Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
-    document.getElementById("economia").innerText=economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
-  });
-}
-
-function fmt(s){ let m=Math.floor(s/60); let sec=Math.floor(s%60); return `${m}:${sec<10?'0':''}${sec}`; }
-function toggle(){ player.getPaused().then(p=>p?player.play():player.pause()); }
-function pular(s){ player.getCurrentTime().then(t=>player.setCurrentTime(t+s)); }
-
-// ENVIAR PEDIDO - agora abre tela de confirmação
-function enviar(){
-  let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
-  document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
-
-  // Preenche lista de confirmação
-  const ul = document.getElementById('lista-confirmacao');
-  ul.innerHTML = '';
-  lances.forEach((l,i)=>{
-    let li = document.createElement('li');
-    let desc = calcDesc(i);
-    let valor = preco*(1-desc);
-    li.innerHTML = `<span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)}</span><span>R$${valor.toFixed(2)}</span>`;
-    ul.appendChild(li);
-  });
-
-  document.getElementById('tela-confirmacao').style.display = 'flex';
-  document.getElementById('footer').style.display = 'none';
-}
-
-// Botão da tela de confirmação
-document.getElementById('btn-confirmar').addEventListener('click', ()=>{
-  let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
-  let msg="⚽ Pedido Letto\n\n";
-  msg+=`🎥 Vídeo completo: ${videoLink}\n\n`;
-  lances.forEach((l,i)=>{ msg+=`Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`; });
-  let total = lances.reduce((acc,l,index)=>acc+preco*(1-calcDesc(index)),0);
-  let totalSem=lances.length*preco;
-  let descontoFinal=totalSem-total;
-  msg+=`\n🎯 Desconto final: R$${descontoFinal.toFixed(2)}\n\n`;
-  msg+=`💰 *TOTAL: R$${total.toFixed(2)}* (${lances.length} lance${lances.length!=1?'s':''})`;
-
-  window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
-
-  document.getElementById('tela-confirmacao').style.display = 'none';
-  document.getElementById('footer').style.display = 'flex';
-});
-
-// ARRASTAR BOLINHA TIMELINE
-let arrastando=false;
-handle.addEventListener("mousedown", startDrag);
-handle.addEventListener("touchstart", startDrag);
-document.addEventListener("mousemove", drag);
-document.addEventListener("touchmove", drag);
-document.addEventListener("mouseup", endDrag);
-document.addEventListener("touchend", endDrag);
-function startDrag(e){ e.preventDefault(); arrastando=true; }
-function drag(e){
-  if(!arrastando) return;
-  let clientX = e.touches? e.touches[0].clientX : e.clientX;
-  const rect=timeline.getBoundingClientRect();
-  let p=(clientX-rect.left)/rect.width;
-  if(p<0) p=0; if(p>1) p=1;
-  handle.style.left=(p*100)+"%";
-  progress.style.width=(p*100)+"%";
-  player.getDuration().then(d=>player.setCurrentTime(d*p));
-}
-function endDrag(e){ arrastando=false; }
 </script>
 
 </body>
