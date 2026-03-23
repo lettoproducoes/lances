@@ -56,6 +56,16 @@ h2{
   touch-action: none;
 }
 
+/* RANGE DOS LANCES (ADICIONADO) */
+.range{
+  position:absolute;
+  top:0;
+  height:100%;
+  background:rgba(46,204,113,0.4);
+  border-radius:7px;
+  z-index:0;
+}
+
 /* CONTROLES */
 .controls{display:flex;margin:5px;}
 button{
@@ -161,42 +171,49 @@ li{
   width:100%;
   height:100%;
   background:#121212;
-  display:flex;
-  flex-direction:column;
-  padding:20px;
-  z-index:999;
   display:none;
-}
-
-#conteudo-confirmacao{
-  flex:1;
-  overflow:auto;
+  flex-direction:column;
+  z-index:999;
 }
 
 #tela-confirmacao h2{
-  margin-bottom:10px;
   text-align:center;
+  padding:15px 10px 5px;
+  margin:0;
 }
 
 #tela-confirmacao p{
   text-align:center;
-  margin-bottom:15px;
+  padding:0 15px;
+  margin-bottom:10px;
+  font-size:14px;
   line-height:1.4em;
 }
 
+/* TOTAL EM DESTAQUE */
 #total-confirmacao{
-  font-size:28px;
+  font-size:36px;
   font-weight:bold;
   color:#2ecc71;
-  margin:15px 0;
   text-align:center;
+  margin:10px 0 5px;
 }
 
+/* BLOCO DO TOTAL (MAIS VISUAL) */
+.total-box{
+  background:#1e1e1e;
+  margin:10px;
+  padding:15px;
+  border-radius:12px;
+  text-align:center;
+  border:2px solid #2ecc71;
+}
+
+/* LISTA SCROLLÁVEL */
 #lista-confirmacao{
-  width:100%;
-  max-height:200px;
+  flex:1;
   overflow:auto;
-  margin-bottom:20px;
+  margin:10px;
 }
 
 #lista-confirmacao li{
@@ -210,16 +227,25 @@ li{
 }
 
 /* BOTÃO FIXO */
-#btn-confirmar{
+#confirmacao-footer{
   position:sticky;
   bottom:0;
   width:100%;
-  padding:15px;
-  font-size:16px;
-  background:#3498db;
+  background:#1e1e1e;
+  padding:10px;
+  border-top:1px solid #333;
+}
+
+#btn-confirmar{
+  width:100%;
+  padding:14px;
+  font-size:18px;
+  background:#2ecc71;
   border:none;
   border-radius:10px;
   color:white;
+  font-weight:bold;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -260,29 +286,288 @@ li{
   <button class="enviar" onclick="enviar()">📤 Enviar Pedido</button>
 </div>
 
-<!-- TELA DE CONFIRMAÇÃO -->
 <div id="tela-confirmacao">
-  <div id="conteudo-confirmacao">
-    <h2>⚡ Confirme seu Pedido ⚡</h2>
-    <p>
-      Confira abaixo os lances selecionados antes de enviar:<br>
-      ⚠️ Na tela de pagamento do MercadoPago, preencha **exatamente este valor**, caso contrário a edição dos lances **não será iniciada**.
-    </p>
-    <ul id="lista-confirmacao"></ul>
+  <h2>⚡ Confirme seu Pedido ⚡</h2>
+
+  <p>
+    Confira os lances antes de enviar:<br>
+    ⚠️ Na tela de pagamento do MercadoPago, preencha **exatamente com este valor**, caso contrário a edição dos lances **não será iniciada**.
+  </p>
+
+  <div class="total-box">
+    <div style="font-size:13px; opacity:0.7;">Valor total</div>
     <div id="total-confirmacao">R$0</div>
   </div>
-  <button id="btn-confirmar">📤 Enviar Pedido</button>
+
+  <ul id="lista-confirmacao"></ul>
+
+  <div id="confirmacao-footer">
+    <button id="btn-confirmar">📤 Enviar Pedido</button>
+  </div>
 </div>
 
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
-// ALERTA AO CLICAR EM MARCAR FIM
+function getVideoId(){
+  const params = new URLSearchParams(window.location.search);
+  return params.get('video') || '1175798353';
+}
+
+const videoId = getVideoId();
+document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
+
+const player = new Vimeo.Player('player');
+
+const timeline = document.getElementById("timeline");
+const progress = document.getElementById("progress");
+const lista = document.getElementById("lista");
+const btn = document.getElementById("btnPlayPause");
+const handle = document.getElementById("handle");
+const contadorLance = document.getElementById("contadorLance"); // corrigido
+
+let inicio = null, lances = [], ultimoTempo = 0, interval = null;
+const preco = 15;
+
+player.on('play',()=>btn.innerText="⏸️");
+player.on('pause',()=>btn.innerText="▶️");
+
+player.on('timeupdate', d => {
+  if(d.duration){
+    let percent = (d.seconds/d.duration)*100;
+    progress.style.width = percent + "%";
+    if(!arrastando) handle.style.left = percent + "%";
+  }
+  if(d.seconds < ultimoTempo - 0.5) reset();
+  ultimoTempo = d.seconds;
+
+  if(inicio !== null && d.seconds - inicio >= 10){
+    finalizar(d.seconds);
+  }
+});
+
+timeline.onclick=e=>{
+  const r=timeline.getBoundingClientRect();
+  const p=(e.clientX-r.left)/r.width;
+  player.getDuration().then(d=>player.setCurrentTime(d*p));
+};
+
+function reset(){
+  inicio=null;
+  clearInterval(interval);
+  contadorLance.innerText="⏱ Duração do lance: 0 s";
+  contadorLance.classList.remove("alerta","piscar");
+}
+
+function inicioLance(){
+  player.play();
+  player.getCurrentTime().then(t=>{
+    clearInterval(interval);
+    inicio=t;
+    interval=setInterval(()=>{
+      player.getCurrentTime().then(sec=>{
+        let dur=sec-inicio;
+        contadorLance.innerText=`⏱ Duração do lance: ${dur.toFixed(1)} s`;
+        if(dur>=10) finalizar(sec);
+        if(dur>10) contadorLance.classList.add("alerta","piscar");
+        else contadorLance.classList.remove("alerta","piscar");
+      });
+    },100);
+  });
+}
+
 function fimLance(){
   if(inicio===null) return alert("Marque início");
-  alert("⚠️ O tempo mínimo do lance é de 3 segundos");
   player.getCurrentTime().then(f=>finalizar(f));
 }
+
+function finalizar(fim){
+  if(inicio===null) return;
+  let dur=fim-inicio;
+
+  if(dur<3){
+    alert("O lance deve ter no mínimo 3 segundos");
+    reset();
+    return;
+  }
+
+  let novo={inicio,fim,dur};
+  if(lances.some(l=>Math.abs(l.inicio-novo.inicio)<0.5)){ reset(); return; }
+  if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){ alert("Sobreposição!"); reset(); return; }
+
+  lances.push(novo);
+  lances.sort((a,b)=>a.inicio-b.inicio);
+  clearInterval(interval);
+  reset();
+  render();
+}
+
+function calcDesc(i){
+  let q=i+1;
+  if(q===1) return 0;
+  if(q>=10) return 0.2;
+  return 0.1+((q-2)*(0.1/8));
+}
+
+function render(){
+  lista.innerHTML="";
+  timeline.querySelectorAll(".range").forEach(e=>e.remove());
+
+  let total=0,totalSem=0;
+
+  player.getDuration().then(duracao=>{
+    lances.forEach((l,i)=>{
+      let desc=calcDesc(i);
+      let valor=preco*(1-desc);
+
+      total+=valor;
+      totalSem+=preco;
+
+      let li=document.createElement("li");
+
+      let info=document.createElement("div");
+      info.className="info";
+      li.innerHTML=`<div class="info"><span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span><span class="valor">R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span></div>`;
+
+      let v=document.createElement("button");
+      v.className="ver";
+      v.innerText="▶️ Ver";
+      v.onclick=()=>{
+        player.setCurrentTime(l.inicio);
+        document.querySelectorAll("li").forEach(x=>x.classList.remove("ativo"));
+        li.classList.add("ativo");
+      };
+
+      let r=document.createElement("button");
+      r.className="remover";
+      r.innerText="🗑️ Remover";
+      r.onclick=()=>{
+        lances=lances.filter(x=>x!==l);
+        render();
+      };
+
+      let box=document.createElement("div");
+      box.className="linhaBotoes";
+      box.append(v,r);
+
+      li.append(info,box);
+      lista.appendChild(li);
+
+      let div=document.createElement("div");
+      div.className="range";
+      let left=(l.inicio/duracao)*100;
+      let width=((l.fim-l.inicio)/duracao)*100;
+      div.style.left=left+"%";
+      div.style.width=width+"%";
+      div.onclick=(e)=>{
+        e.stopPropagation();
+        player.setCurrentTime(l.inicio);
+      };
+
+      timeline.appendChild(div);
+    });
+
+    let economia=totalSem-total;
+
+    document.getElementById("total").innerText=`Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
+    document.getElementById("economia").innerText=economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
+  });
+}
+
+function fmt(s){
+  let m=Math.floor(s/60);
+  let sec=Math.floor(s%60);
+  return `${m}:${sec<10?'0':''}${sec}`;
+}
+
+function toggle(){
+  player.getPaused().then(p=>p?player.play():player.pause());
+}
+
+function pular(s){
+  player.getCurrentTime().then(t=>player.setCurrentTime(t+s));
+}
+
+function enviar(){
+  let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
+
+  document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
+
+  const ul = document.getElementById('lista-confirmacao');
+  ul.innerHTML = '';
+
+  lances.forEach((l,i)=>{
+    let li = document.createElement('li');
+    let desc = calcDesc(i);
+    let valor = preco*(1-desc);
+
+    li.innerHTML = `<span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span><span>R$${valor.toFixed(2)}</span>`;
+    ul.appendChild(li);
+  });
+
+  document.getElementById('tela-confirmacao').style.display = 'flex';
+  document.getElementById('footer').style.display = 'none';
+}
+
+document.getElementById('btn-confirmar').addEventListener('click', ()=>{
+  let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
+
+  let msg="⚽ Pedido Letto\n\n";
+  msg+=`🎥 Vídeo completo: ${videoLink}\n\n`;
+
+  lances.forEach((l,i)=>{
+    msg+=`Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`;
+  });
+
+  let total = lances.reduce((acc,l,index)=>acc+preco*(1-calcDesc(index)),0);
+  let totalSem=lances.length*preco;
+  let descontoFinal=totalSem-total;
+
+  msg+=`\n🎯 Desconto final: R$${descontoFinal.toFixed(2)}\n\n`;
+  msg+=`💰 *TOTAL: R$${total.toFixed(2)}* (${lances.length} lance${lances.length!=1?'s':''})`;
+
+  window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
+
+  document.getElementById('tela-confirmacao').style.display = 'none';
+  document.getElementById('footer').style.display = 'flex';
+});
+
+// DRAG TIMELINE
+let arrastando=false;
+
+handle.addEventListener("mousedown", e=>{
+  e.preventDefault();
+  arrastando=true;
+});
+
+handle.addEventListener("touchstart", e=>{
+  e.preventDefault();
+  arrastando=true;
+});
+
+document.addEventListener("mousemove", drag);
+document.addEventListener("touchmove", drag);
+
+function drag(e){
+  if(!arrastando) return;
+
+  let clientX = e.touches? e.touches[0].clientX : e.clientX;
+
+  const rect=timeline.getBoundingClientRect();
+  let p=(clientX-rect.left)/rect.width;
+
+  if(p<0) p=0;
+  if(p>1) p=1;
+
+  handle.style.left=(p*100)+"%";
+  progress.style.width=(p*100)+"%";
+
+  player.getDuration().then(d=>player.setCurrentTime(d*p));
+}
+
+document.addEventListener("mouseup", ()=>arrastando=false);
+document.addEventListener("touchend", ()=>arrastando=false);
+
 </script>
 
 </body>
