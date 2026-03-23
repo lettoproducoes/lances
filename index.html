@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Letto Produções</title>
 
 <style>
@@ -12,7 +12,8 @@ body{
   color:#eee;
   display:flex;
   flex-direction:column;
-  height:100vh;
+  width: 100%;
+  height: 100%;  
 }
 
 h2{
@@ -23,7 +24,14 @@ h2{
 }
 
 /* PLAYER */
-#player{width:100%;height:220px;border:none;}
+#player{
+  width: 100vw;       /* largura total da viewport */
+  max-width: 100%;    /* garante que não ultrapasse a tela */
+  height: calc(100vw * 9 / 16); /* mantém proporção 16:9 */
+  border: none;
+  display: block;
+  margin: 0 auto;
+}
 
 /* TIMELINE */
 #timeline{
