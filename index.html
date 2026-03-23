@@ -663,8 +663,8 @@ function render() {
 
       li.innerHTML = `
         <div class="info">
-          <span>Lance ${i + 1} ${formatTime(l.inicio)} - ${formatTime(l.fim)} (${l.dur.toFixed(1)}s)</span>
-          <span class="valor">💰 Esse lance: R$${valor.toFixed(2)} (-${Math.round(desc * 100)}%)</span>
+          <span>${i + 1}->${formatTime(l.inicio)}-${formatTime(l.fim)} (${l.dur.toFixed(1)}s)</span>
+          <span class="valor">💰Esse Lance: R$${valor.toFixed(2)} (-${Math.round(desc * 100)}%)</span>
         </div>
       `;
 
