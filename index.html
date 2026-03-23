@@ -290,13 +290,21 @@ li{
   <h2>⚡ Confirme seu Pedido ⚡</h2>
 
   <p>
-    Confira os lances antes de enviar:<br>
-    ⚠️ Na tela de pagamento do MercadoPago, preencha **exatamente com este valor**, caso contrário a edição dos lances **não será iniciada**.
+    Confira os lances e preencha seus dados:<br>
+    ⚠️ No pagamento, use exatamente o valor abaixo.
   </p>
 
   <div class="total-box">
-    <div style="font-size:13px; opacity:0.7;">Valor total</div>
+    <div style="font-size:13px;opacity:0.7;">Valor total</div>
     <div id="total-confirmacao">R$0</div>
+  </div>
+
+  <!-- FORMULÁRIO -->
+  <div id="formulario">
+    <input type="text" id="nome" placeholder="Nome Completo" required>
+    <input type="tel" id="telefone" placeholder="Telefone (WhatsApp)" required>
+    <input type="text" id="atleta" placeholder="Nome do Atleta" required>
+    <input type="text" id="clube" placeholder="Treinador / Clube" required>
   </div>
 
   <ul id="lista-confirmacao"></ul>
