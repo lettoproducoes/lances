@@ -650,12 +650,8 @@ function render(){
       };
 
       timeline.appendChild(div);	  
-    });
-	
-	// Garante que a rolagem ocorra após a DOM atualizar
-	requestAnimationFrame(()=>{
 	  lista.scrollTop = lista.scrollHeight;
-	});
+    });	
 
     let economia=totalSem-total;
 
