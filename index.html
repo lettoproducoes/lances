@@ -247,6 +247,88 @@ li{
   font-weight:bold;
   cursor:pointer;
 }
+
+#formulario{
+  background:#181818;
+  margin:10px;
+  padding:15px;
+  border-radius:12px;
+  border:1px solid #333;
+
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  align-items:center;
+}
+
+.input-group{
+  position:relative;
+  width:100%;
+  max-width:400px;
+}
+
+.input-group input{
+  width:100%;
+  padding:12px 12px 12px 38px;
+  border-radius:8px;
+  border:1px solid #333;
+  background:#1e1e1e;
+  color:#fff;
+  font-size:14px;
+  outline:none;
+  transition:0.2s;
+}
+
+.input-group input:focus{
+  border-color:#3498db;
+}
+
+/* Ícone */
+.input-group span{
+  position:absolute;
+  left:10px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:14px;
+  opacity:0.7;
+}
+
+/* Validação */
+.input-group input.valido{
+  border-color:#2ecc71;
+}
+
+.input-group input.invalido{
+  border-color:#e74c3c;
+}
+
+#formulario input{
+  width:100%;
+  max-width:400px; /* largura controlada (fica bonito no desktop) */
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  font-size:14px;
+  background:#1e1e1e;
+  color:#fff;
+  outline:none;
+}
+
+#formulario{
+  background:#181818;
+  margin:10px;
+  padding:15px;
+  border-radius:12px;
+  border:1px solid #333;
+}
+
+#formulario input::placeholder{
+  color:#aaa;
+}
+
+#tela-confirmacao{
+  padding-bottom:80px;
+}
 </style>
 </head>
 
@@ -300,18 +382,31 @@ li{
   </div>
 
   <!-- FORMULÁRIO -->
-  <div id="formulario">
-    <input type="text" id="nome" placeholder="Nome Responsável" required>
-    <input type="tel" id="telefone" placeholder="Telefone (WhatsApp)" required>
-    <input type="text" id="atleta" placeholder="Nome do Atleta" required>
-    <input type="text" id="clube" placeholder="Treinador / Clube" required>
-  </div>
+	<div id="formulario">
+
+	  <div class="input-group">
+		<input type="text" id="nome" placeholder="Nome Completo Responsável" required>
+	  </div>
+
+	  <div class="input-group">
+		<input type="tel" id="telefone" placeholder="Telefone (WhatsApp)" required>
+	  </div>
+
+	  <div class="input-group">
+		<input type="text" id="atleta" placeholder="Nome do Atleta" required>
+	  </div>
+
+	  <div class="input-group">
+		<input type="text" id="clube" placeholder="Treinador / Clube" required>
+	  </div>
+
+	</div>
 
   <ul id="lista-confirmacao"></ul>
 
   <div id="confirmacao-footer">
     <button onclick="voltarEdicao()" style="width:100%;margin-bottom:8px;padding:10px;background:#444;border:none;border-radius:8px;color:#fff;">← Voltar e editar</button>
-	<button id="btn-confirmar">📤 Enviar Pedido</button>
+	<button id="btn-confirmar">💰 Finalizar e Enviar Pedido</button>
   </div>
 </div>
 
@@ -328,6 +423,26 @@ document.getElementById('player').src = `https://player.vimeo.com/video/${videoI
 
 const player = new Vimeo.Player('player');
 
+player.on('loaded', ()=>{
+  const tempoSalvo = localStorage.getItem('tempoVideo_'+videoId);
+  
+  if(tempoSalvo){
+    player.getDuration().then(dur=>{
+      if(parseFloat(tempoSalvo) < dur - 5){
+        player.setCurrentTime(parseFloat(tempoSalvo));
+      }
+    });
+  }
+
+  if(tempoSalvo){
+	  console.log("Continuar de onde parou?");
+  }  
+
+  if(tempoSalvo){
+    player.setCurrentTime(parseFloat(tempoSalvo));
+  }
+});
+
 const timeline = document.getElementById("timeline");
 const progress = document.getElementById("progress");
 const lista = document.getElementById("lista");
@@ -338,7 +453,7 @@ const contadorLance = document.getElementById("contadorLance"); // corrigido
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
 const preco = 1;
 
-let dadosSalvos = localStorage.getItem('pedidoLetto');
+let dadosSalvos = localStorage.getItem('pedidoLetto_${videoId}');
 
 if(dadosSalvos){
   try{
@@ -373,6 +488,13 @@ player.on('timeupdate', d => {
   if(inicio !== null && d.seconds - inicio >= 10){
     finalizar(d.seconds);
   }
+  
+  // salva a cada 2 segundos (evita excesso de gravação)
+  if(Math.floor(d.seconds) % 3 === 0){
+    localStorage.setItem('tempoVideo_'+videoId, d.seconds);
+    ultimoSalvamento = d.seconds;
+  }
+  
 });
 
 timeline.onclick=e=>{
@@ -520,9 +642,6 @@ function pular(s){
 }
 
 function enviar(){
-  btn.innerText = "Enviando...";
-  btn.disabled = true;
-
   let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
 
   document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
@@ -552,11 +671,16 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   const clube = document.getElementById('clube').value.trim();
 
   // VALIDAÇÃO
-  if(!nome || !telefone || !atleta || !clube){
-    alert("Preencha todos os campos obrigatórios!");
-    return;
-  }
+	const nomeValido = validarCampo(document.getElementById('nome'),'texto');
+	const telValido = validarCampo(document.getElementById('telefone'),'telefone');
+	const atletaValido = validarCampo(document.getElementById('atleta'),'texto');
+	const clubeValido = validarCampo(document.getElementById('clube'),'texto');
 
+	if(!nomeValido || !telValido || !atletaValido || !clubeValido){
+	  alert("Preencha corretamente todos os campos!");
+	  return;
+	}
+	
   let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
 
   let msg="⚽ *Pedido Letto*\n\n";
@@ -584,8 +708,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   // ENVIO MAIS CONFIÁVEL
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`, '_blank');
   
-  localStorage.removeItem('lances');
-  localStorage.removeItem('pedidoLetto');
+  localStorage.removeItem('pedidoLetto_${videoId}');
 
 });
 
@@ -656,7 +779,7 @@ function salvarTudo(){
     clube: document.getElementById('clube')?.value || ''
   };
 
-  localStorage.setItem('pedidoLetto', JSON.stringify(dados));
+  localStorage.setItem('pedidoLetto_${videoId}', JSON.stringify(dados));
 }
 
 ['nome','telefone','atleta','clube'].forEach(id=>{
@@ -669,6 +792,50 @@ function salvarTudo(){
 if(lances.length){
   render();
 }
+
+function validarCampo(input, tipo){
+  let valor = input.value.trim();
+
+  if(tipo === 'texto'){
+    if(valor.length >= 3){
+      input.classList.add('valido');
+      input.classList.remove('invalido');
+      return true;
+    }
+  }
+
+  if(tipo === 'telefone'){
+    let numeros = valor.replace(/\D/g,'');
+    if(numeros.length >= 10){
+      input.classList.add('valido');
+      input.classList.remove('invalido');
+      return true;
+    }
+  }
+
+  input.classList.add('invalido');
+  input.classList.remove('valido');
+  return false;
+}
+
+// listeners
+document.getElementById('nome').addEventListener('input', e=>{
+  validarCampo(e.target,'texto');
+});
+
+document.getElementById('telefone').addEventListener('input', e=>{
+  validarCampo(e.target,'telefone');
+});
+
+document.getElementById('atleta').addEventListener('input', e=>{
+  validarCampo(e.target,'texto');
+});
+
+document.getElementById('clube').addEventListener('input', e=>{
+  validarCampo(e.target,'texto');
+});
+
+let ultimoSalvamento = 0;
 
 document.addEventListener("mouseup", ()=>arrastando=false);
 document.addEventListener("touchend", ()=>arrastando=false);
