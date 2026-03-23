@@ -316,6 +316,20 @@ li{
 #tela-confirmacao{
   padding-bottom:80px;
 }
+
+#timeDisplay{
+  position:absolute;
+  bottom:10px; /* distancia do fundo do vídeo */
+  left:50%;
+  transform:translateX(-50%);
+  font-size:14px;
+  color:#fff;
+  background:rgba(0,0,0,0.4); /* opcional, deixa mais legível */
+  padding:2px 6px;
+  border-radius:4px;
+  z-index:3;
+  pointer-events:none; /* para não interferir no clique do timeline */
+}
 </style>
 </head>
 
@@ -328,6 +342,7 @@ li{
 <div id="timeline">
   <div id="progress"></div>
   <div id="handle"></div>
+  <div id="timeDisplay">00:00:00 / 00:00:00</div>
 </div>
 
 <div class="controls">
@@ -336,9 +351,9 @@ li{
 </div>
 
 <div class="controls">
-  <button class="skip" onclick="pular(-10)">⏪</button>
+  <button class="skip" onclick="pular(-5)">⏪ -5s</button>
   <button class="playpause" id="btnPlayPause" onclick="toggle()">⏸️</button>
-  <button class="skip" onclick="pular(10)">⏩</button>
+  <button class="skip" onclick="pular(5)">⏩ +5s</button>
 </div>
 
 <div id="contadorLance">⏱ Duração do lance: 0 s</div>
@@ -510,15 +525,32 @@ player.on('timeupdate', d => {
     let percent = (d.seconds/d.duration)*100;
     progress.style.width = percent + "%";
     if(!arrastando) handle.style.left = percent + "%";
+
+    // Display tempo atual / total
+    const timeDisplay = document.getElementById('timeDisplay');
+    let cur = Math.floor(d.seconds), dur = Math.floor(d.duration);
+    let curMin = Math.floor(cur/60), curSec = cur%60;
+    let durMin = Math.floor(dur/60), durSec = dur%60;
+    timeDisplay.innerText = `${formatTime(Math.floor(d.seconds))} / ${formatTime(Math.floor(d.duration))}`;
+
+    if(d.seconds < ultimoTempo - 0.5) reset();
+    ultimoTempo = d.seconds;
+
+    if(d.seconds - ultimoSalvamento > 3){
+      localStorage.setItem('tempoVideo_'+videoId, d.seconds);
+      ultimoSalvamento = d.seconds;
+    }
+
+    // Finaliza lance automaticamente se ultrapassar 15s
+    if(inicio !== null && d.seconds - inicio >= 10){
+      clearInterval(interval);
+      contadorLance.classList.remove("alerta","piscar");
+      player.pause().then(()=>{
+        alert("O lance atingiu o tempo máximo de 10 segundos e foi finalizado automaticamente.");
+        finalizar(d.seconds);
+      });
+    }
   }
-  if(d.seconds < ultimoTempo - 0.5) reset();
-  ultimoTempo = d.seconds;
- 
-  if(d.seconds - ultimoSalvamento > 3){
-   localStorage.setItem('tempoVideo_'+videoId, d.seconds);
-   ultimoSalvamento = d.seconds;
-  }
-  
 });
 
 timeline.onclick=e=>{
@@ -547,11 +579,11 @@ function inicioLance(){
         contadorLance.innerText = `⏱ Duração do lance: ${dur.toFixed(1)} s`;
 
         // Finaliza automaticamente se atingir o máximo de 15s
-        if(dur >= 15){
+        if(dur >= 10){
           clearInterval(interval);
           contadorLance.classList.remove("alerta","piscar");
           player.pause().then(()=>{
-            alert("O lance atingiu o tempo máximo de 15 segundos e foi finalizado automaticamente.");
+            alert("O lance atingiu o tempo máximo de 10 segundos e foi finalizado automaticamente.");
             finalizar(sec);
           });
         }
@@ -564,32 +596,6 @@ function inicioLance(){
   });
 }
 
-// Atualização no timeupdate do player
-player.on('timeupdate', d => {
-  if(d.duration){
-    let percent = (d.seconds/d.duration)*100;
-    progress.style.width = percent + "%";
-    if(!arrastando) handle.style.left = percent + "%";
-  }
-  if(d.seconds < ultimoTempo - 0.5) reset();
-  ultimoTempo = d.seconds;
-
-  // Finaliza lance automaticamente se ultrapassar 15s
-  if(inicio !== null && d.seconds - inicio >= 15){
-    clearInterval(interval);
-    contadorLance.classList.remove("alerta","piscar");
-    player.pause().then(()=>{
-      alert("O lance atingiu o tempo máximo de 15 segundos e foi finalizado automaticamente.");
-      finalizar(d.seconds);
-    });
-  }
-
-  if(d.seconds - ultimoSalvamento > 3){
-    localStorage.setItem('tempoVideo_'+videoId, d.seconds);
-    ultimoSalvamento = d.seconds;
-  }
-});
-
 function fimLance(){
   if(inicio===null) return alertPause("Marque início");
   player.getCurrentTime().then(f=>finalizar(f));
@@ -599,8 +605,8 @@ function finalizar(fim){
   if(inicio === null) return;
   let dur = fim - inicio;
 
-  if(dur < 3){
-    alertPause("O lance deve ter no mínimo 3 segundos");
+  if(dur < 5){
+    alertPause("O lance deve ter no mínimo 5 segundos");
     reset();
     return;
   }
@@ -657,7 +663,7 @@ function render() {
 
       li.innerHTML = `
         <div class="info">
-          <span>Lance ${i + 1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span>
+          <span>Lance ${i + 1} ${formatTime(l.inicio)} - ${formatTime(l.fim)} (${l.dur.toFixed(1)}s)</span>
           <span class="valor">💰 Esse lance: R$${valor.toFixed(2)} (-${Math.round(desc * 100)}%)</span>
         </div>
       `;
@@ -720,12 +726,6 @@ function render() {
   });
 }
 
-function fmt(s){
-  let m=Math.floor(s/60);
-  let sec=Math.floor(s%60);
-  return `${m}:${sec<10?'0':''}${sec}`;
-}
-
 function toggle(){
   player.getPaused().then(p=>p?player.play():player.pause());
 }
@@ -784,7 +784,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
 
   // LANCES
   lances.forEach((l,i)=>{
-    msg+=`▶️ Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`;
+    msg+=`▶️ Lance ${i+1}: ${formatTime(l.inicio)} - ${formatTime(l.fim)} (${l.dur.toFixed(1)}s)\n`;
   });
 
   let total = lances.reduce((acc,l,index)=>acc+preco*(1-calcDesc(index)),0);
@@ -928,6 +928,13 @@ function alertPause(msg){
   player.pause().then(() => {
     alert(msg);
   });
+}
+
+function formatTime(seconds){
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 
 document.getElementById('resumo-lances').innerText =
