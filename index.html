@@ -233,7 +233,7 @@ li{
   width:100%;
   background:#1e1e1e;
   padding:10px;
-  border-top:1px solid #333;
+  border-top:1px solid #333;  
 }
 
 #btn-confirmar{
@@ -283,6 +283,9 @@ li{
     <div id="total">Total: R$0 (0 lances)</div>
     <div id="economia"></div>
   </div>
+  <button onclick="voltarEdicao()" style="width:100%;margin-bottom:8px;padding:10px;background:#444;border:none;border-radius:8px;color:#fff;">
+  ← Voltar e editar
+  </button>
   <button class="enviar" onclick="enviar()">📤 Enviar Pedido</button>
 </div>
 
@@ -336,6 +339,16 @@ const contadorLance = document.getElementById("contadorLance"); // corrigido
 
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
 const preco = 1;
+
+let lancesSalvos = localStorage.getItem('lances');
+
+if(lancesSalvos){
+  try{
+    lances = JSON.parse(lancesSalvos) || [];
+  }catch(e){
+    lances = [];
+  }
+}
 
 player.on('play',()=>btn.innerText="⏸️");
 player.on('pause',()=>btn.innerText="▶️");
@@ -404,6 +417,7 @@ function finalizar(fim){
   if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){ alert("Sobreposição!"); reset(); return; }
 
   lances.push(novo);
+  salvarLocal();
   lances.sort((a,b)=>a.inicio-b.inicio);
   clearInterval(interval);
   reset();
@@ -450,7 +464,8 @@ function render(){
       r.className="remover";
       r.innerText="🗑️ Remover";
       r.onclick=()=>{
-        lances=lances.filter(x=>x!==l);
+        lances = lances.filter(x=>x!==l);
+		salvarLocal();
         render();
       };
 
@@ -518,26 +533,48 @@ function enviar(){
 }
 
 document.getElementById('btn-confirmar').addEventListener('click', ()=>{
+
+  // CAPTURA DADOS
+  const nome = document.getElementById('nome').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
+  const atleta = document.getElementById('atleta').value.trim();
+  const clube = document.getElementById('clube').value.trim();
+
+  // VALIDAÇÃO
+  if(!nome || !telefone || !atleta || !clube){
+    alert("Preencha todos os campos obrigatórios!");
+    return;
+  }
+
   let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
 
-  let msg="⚽ Pedido Letto\n\n";
-  msg+=`🎥 Vídeo completo: ${videoLink}\n\n`;
+  let msg="⚽ *Pedido Letto*\n\n";
 
+  // DADOS DO CLIENTE
+  msg+=`👤 Nome: ${nome}\n`;
+  msg+=`📱 WhatsApp: ${telefone}\n`;
+  msg+=`🏃 Atleta: ${atleta}\n`;
+  msg+=`🏆 Clube/Treinador: ${clube}\n\n`;
+
+  msg+=`🎥 Vídeo completo:\n${videoLink}\n\n`;
+
+  // LANCES
   lances.forEach((l,i)=>{
-    msg+=`Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`;
+    msg+=`▶️ Lance ${i+1}: ${fmt(l.inicio)} - ${fmt(l.fim)} (${l.dur.toFixed(1)}s)\n`;
   });
 
   let total = lances.reduce((acc,l,index)=>acc+preco*(1-calcDesc(index)),0);
   let totalSem=lances.length*preco;
   let descontoFinal=totalSem-total;
 
-  msg+=`\n🎯 Desconto final: R$${descontoFinal.toFixed(2)}\n\n`;
-  msg+=`💰 *TOTAL: R$${total.toFixed(2)}* (${lances.length} lance${lances.length!=1?'s':''})`;
+  msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
+  msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
 
-  window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`);
+  // ENVIO MAIS CONFIÁVEL
+  window.location.href = `https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`;
+  
+  localStorage.removeItem('lances');
 
-  document.getElementById('tela-confirmacao').style.display = 'none';
-  document.getElementById('footer').style.display = 'flex';
 });
 
 // DRAG TIMELINE
@@ -571,6 +608,39 @@ function drag(e){
   progress.style.width=(p*100)+"%";
 
   player.getDuration().then(d=>player.setCurrentTime(d*p));
+}
+
+function voltarEdicao(){
+  document.getElementById('tela-confirmacao').style.display = 'none';
+  document.getElementById('footer').style.display = 'flex';
+}
+
+const telInput = document.getElementById('telefone');
+
+telInput.addEventListener('input', (e)=>{
+  let v = e.target.value.replace(/\D/g,'');
+
+  if(v.length > 11) v = v.slice(0,11);
+
+  if(v.length > 10){
+    v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+  }else if(v.length > 6){
+    v = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/, "($1) $2-$3");
+  }else if(v.length > 2){
+    v = v.replace(/^(\d{2})(\d{0,5})$/, "($1) $2");
+  }else{
+    v = v.replace(/^(\d*)$/, "($1");
+  }
+
+  e.target.value = v;
+});
+
+function salvarLocal(){
+  localStorage.setItem('lances', JSON.stringify(lances));
+}
+
+if(lances.length){
+  render();
 }
 
 document.addEventListener("mouseup", ()=>arrastando=false);
