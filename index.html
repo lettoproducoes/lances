@@ -652,17 +652,15 @@ function render(){
       timeline.appendChild(div);	  
     });
 	
-	lista.scrollTop = lista.scrollHeight;
+	// Garante que a rolagem ocorra após a DOM atualizar
+	requestAnimationFrame(()=>{
+	  lista.scrollTop = lista.scrollHeight;
+	});
 
     let economia=totalSem-total;
 
     document.getElementById("total").innerText=`Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length!=1?'s':''})`;
     document.getElementById("economia").innerText=economia>0?`💰 Economizou R$${economia.toFixed(2)}`:"";
-	
-	if(lances.length >= 1 && lances.length < 10){
-	  document.getElementById("economia").innerText += 
-		" • Mais lances maior o desconto";
-	}
 	
   });
 }
