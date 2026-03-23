@@ -248,19 +248,6 @@ li{
   cursor:pointer;
 }
 
-#formulario{
-  background:#181818;
-  margin:10px;
-  padding:15px;
-  border-radius:12px;
-  border:1px solid #333;
-
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  align-items:center;
-}
-
 .input-group{
   position:relative;
   width:100%;
@@ -369,68 +356,88 @@ li{
 </div>
 
 <div id="tela-confirmacao">
-  <h2>⚡ Finalizar Pedido</h2>
 
-  <p>
-    Confira os lances e preencha seus dados:<br>
-	<p>
-	⚠️ <strong>Atenção!</strong><br><br>
+  <!-- HEADER -->
+  <h2>💰 Finalizar Pedido</h2>
 
-	Use <strong style="color:#2ecc71;">o valor exato</strong> na hora de pagar.<br>
-
-	❗ Valor diferente = 
-	<strong style="color:#e74c3c;">pedido não identificado automaticamente</strong>.<br>
-
-	👍 Confira antes de pagar pra evitar atraso.
-	</p>
-  </p>
-
+  <!-- RESUMO -->
   <div class="total-box">
-    <div style="font-size:13px;opacity:0.7;">Valor total</div>
+
+    <div style="font-size:13px;color:#aaa;">Valor total</div>
+
     <div id="total-confirmacao">R$0</div>
+
+    <div style="font-size:13px;color:#aaa;margin-top:5px;">
+      🎬 <span id="resumo-lances">0 lances</span>
+    </div>
+
+    <div style="font-size:12px;color:#2ecc71;margin-top:6px;">
+      💡 Desconto aplicado automaticamente
+    </div>
+
   </div>
-  <div style="text-align:center;font-size:13px;color:#aaa;margin-top:5px;">
-	💡 Quanto mais lances, maior o desconto automático
-  </div>    
-  <div style="text-align:center;font-size:13px;color:#2ecc71;margin-top:8px;">
-	🔥 Mais de 100 atletas já utilizaram este serviço
+
+  <!-- PROVA SOCIAL -->
+  <div style="text-align:center;font-size:13px;color:#2ecc71;margin-top:5px;">
+    🔥 Mais de 100 atletas já utilizaram
+  </div>
+
+  <!-- ALERTA -->
+  <div style="margin:10px;font-size:14px;text-align:center;">
+    ⚠️ Use <strong style="color:#2ecc71;">o valor exato</strong> no pagamento<br>
+    <span style="color:#e74c3c;">Valores diferentes não são reconhecidos automaticamente</span>
   </div>
 
   <!-- FORMULÁRIO -->
-	<div id="formulario">
+  <div id="formulario">
 
-	  <div class="input-group">
-		<input type="text" id="nome" placeholder="Seu nome completo" required>
-	  </div>
+    <div class="input-group">
+      <input type="text" id="nome" placeholder="Seu nome completo" required>
+    </div>
 
-	  <div class="input-group">
-		<input type="tel" id="telefone" placeholder="Seu WhatsApp com DDD" required>
-	  </div>
+    <div class="input-group">
+      <input type="tel" id="telefone" placeholder="Seu WhatsApp com DDD" required>
+    </div>
 
-	  <div class="input-group">
-		<input type="text" id="atleta" placeholder="Nome do Atleta" required>
-	  </div>
+    <div class="input-group">
+      <input type="text" id="atleta" placeholder="Nome do atleta" required>
+    </div>
 
-	  <div class="input-group">
-		<input type="text" id="equipe" placeholder="Treinador e equipe" required>
-	  </div>
+    <div class="input-group">
+      <input type="text" id="equipe" placeholder="Equipe" required>
+    </div>
 
-	</div>
-
-	<div style="text-align:center;margin:10px 0;">
-	  <div style="font-size:13px;color:#aaa;">Resumo do pedido</div>
-	  <div style="font-size:16px;font-weight:bold;">
-		🎬 <span id="resumo-lances">0 lances</span>
-	  </div>
-	</div>
-
-  <div id="confirmacao-footer">
-	<div style="text-align:center;font-size:12px;color:#aaa;margin-bottom:8px;">
-	⏱ Pedidos são processados por ordem de pagamento
-	</div>
-    <button onclick="voltarEdicao()" style="width:100%;margin-bottom:8px;padding:10px;background:#444;border:none;border-radius:8px;color:#fff;">← Voltar e editar</button>
-	<button id="btn-confirmar">💰 Finalizar e Enviar Pedido</button>
   </div>
+
+  <!-- SEGURANÇA -->
+  <div style="text-align:center;font-size:12px;color:#aaa;margin-top:5px;">
+    🔒 Seus dados estão seguros
+  </div>
+
+  <!-- FOOTER FIXO -->
+  <div id="confirmacao-footer">
+
+    <div style="text-align:center;font-size:12px;color:#aaa;margin-bottom:8px;">
+      ⏱ Processamento por ordem de pagamento
+    </div>
+
+    <button onclick="voltarEdicao()" style="
+      width:100%;
+      margin-bottom:8px;
+      padding:10px;
+      background:#333;
+      border:none;
+      border-radius:8px;
+      color:#fff;">
+      ← Voltar e editar
+    </button>
+
+    <button id="btn-confirmar">
+      💰 Finalizar e Enviar Pedido
+    </button>
+
+  </div>
+
 </div>
 
 <script src="https://player.vimeo.com/api/player.js"></script>
@@ -461,9 +468,6 @@ player.on('loaded', ()=>{
 	  console.log("Continuar de onde parou?");
   }  
 
-  if(tempoSalvo){
-    player.setCurrentTime(parseFloat(tempoSalvo));
-  }
 });
 
 const timeline = document.getElementById("timeline");
@@ -473,10 +477,12 @@ const btn = document.getElementById("btnPlayPause");
 const handle = document.getElementById("handle");
 const contadorLance = document.getElementById("contadorLance"); // corrigido
 
+let ultimoSalvamento = 0;
+
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
 const preco = 1;
 
-let dadosSalvos = localStorage.getItem('pedidoLetto_${videoId}');
+let dadosSalvos = localStorage.getItem(`pedidoLetto_${videoId}`);
 
 if(dadosSalvos){
   try{
@@ -513,9 +519,9 @@ player.on('timeupdate', d => {
   }
   
   // salva a cada 2 segundos (evita excesso de gravação)
-  if(Math.floor(d.seconds) % 3 === 0){
-    localStorage.setItem('tempoVideo_'+videoId, d.seconds);
-    ultimoSalvamento = d.seconds;
+  if(d.seconds - ultimoSalvamento > 3){
+   localStorage.setItem('tempoVideo_'+videoId, d.seconds);
+   ultimoSalvamento = d.seconds;
   }
   
 });
@@ -527,6 +533,7 @@ timeline.onclick=e=>{
 };
 
 function reset(){
+  document.querySelector('.inicio').innerText = "🟢 Marcar Início";
   inicio=null;
   clearInterval(interval);
   contadorLance.innerText="⏱ Duração do lance: 0 s";
@@ -534,6 +541,7 @@ function reset(){
 }
 
 function inicioLance(){
+  document.querySelector('.inicio').innerText = "🔴 Gravando...";
   player.play();
   player.getCurrentTime().then(t=>{
     clearInterval(interval);
@@ -617,11 +625,12 @@ function render(){
       r.className="remover";
       r.innerText="🗑️ Remover";
       r.onclick=()=>{
-        lances = lances.filter(x=>x!==l);
-		salvarTudo();
-        render();
-      };
-
+	      if(confirm("Remover este lance?")){
+			lances = lances.filter(x=>x!==l);
+			salvarTudo();
+			render();
+		  }
+	  };
       let box=document.createElement("div");
       box.className="linhaBotoes";
       box.append(v,r);
@@ -640,8 +649,10 @@ function render(){
         player.setCurrentTime(l.inicio);
       };
 
-      timeline.appendChild(div);
+      timeline.appendChild(div);	  
     });
+	
+	lista.scrollTop = lista.scrollHeight;
 
     let economia=totalSem-total;
 
@@ -665,6 +676,14 @@ function pular(s){
 }
 
 function enviar(){
+  if(lances.length === 0){
+    alert("Adicione pelo menos 1 lance");
+    return;
+  }
+  
+  document.getElementById('resumo-lances').innerText =
+    `${lances.length} lance${lances.length != 1 ? 's' : ''}`;
+  
   let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
 
   document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
@@ -719,7 +738,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   // ENVIO MAIS CONFIÁVEL
   window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`, '_blank');
   
-  localStorage.removeItem('pedidoLetto_${videoId}');
+  localStorage.removeItem(`pedidoLetto_${videoId}`)
 
 });
 
@@ -790,7 +809,7 @@ function salvarTudo(){
     equipe: document.getElementById('equipe')?.value || ''
   };
 
-  localStorage.setItem('pedidoLetto_${videoId}', JSON.stringify(dados));
+  localStorage.setItem(`pedidoLetto_${videoId}`, JSON.stringify(dados));
 }
 
 ['nome','telefone','atleta','equipe'].forEach(id=>{
@@ -848,9 +867,7 @@ document.getElementById('equipe').addEventListener('input', e=>{
 
 document.getElementById('resumo-lances').innerText =
   `${lances.length} lance${lances.length != 1 ? 's' : ''} selecionado${lances.length != 1 ? 's' : ''}`;
-
-let ultimoSalvamento = 0;
-
+  
 document.addEventListener("mouseup", ()=>arrastando=false);
 document.addEventListener("touchend", ()=>arrastando=false);
 
