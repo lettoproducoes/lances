@@ -282,10 +282,7 @@ li{
   <div>
     <div id="total">Total: R$0 (0 lances)</div>
     <div id="economia"></div>
-  </div>
-  <button onclick="voltarEdicao()" style="width:100%;margin-bottom:8px;padding:10px;background:#444;border:none;border-radius:8px;color:#fff;">
-  ← Voltar e editar
-  </button>
+  </div>  
   <button class="enviar" onclick="enviar()">📤 Enviar Pedido</button>
 </div>
 
@@ -294,7 +291,7 @@ li{
 
   <p>
     Confira os lances e preencha seus dados:<br>
-    ⚠️ Na tela de pagamento do MercadoPago, preencha **exatamente com este valor**, caso contrário a edição dos lances **não será iniciada**.
+    ⚠️ Na tela de pagamento do MercadoPago, **use exatamente este valor**, caso contrário a edição dos lances **não será iniciada**.
   </p>
 
   <div class="total-box">
@@ -313,7 +310,8 @@ li{
   <ul id="lista-confirmacao"></ul>
 
   <div id="confirmacao-footer">
-    <button id="btn-confirmar">📤 Enviar Pedido</button>
+    <button onclick="voltarEdicao()" style="width:100%;margin-bottom:8px;padding:10px;background:#444;border:none;border-radius:8px;color:#fff;">← Voltar e editar</button>
+	<button id="btn-confirmar">📤 Enviar Pedido</button>
   </div>
 </div>
 
@@ -355,16 +353,6 @@ if(dadosSalvos){
       if(dados.clube) document.getElementById('clube').value = dados.clube;
     }, 200);
 
-  }catch(e){
-    lances = [];
-  }
-}
-
-let lancesSalvos = localStorage.getItem('lances');
-
-if(lancesSalvos){
-  try{
-    lances = JSON.parse(lancesSalvos) || [];
   }catch(e){
     lances = [];
   }
@@ -433,12 +421,11 @@ function finalizar(fim){
   }
 
   let novo={inicio,fim,dur};
-  if(lances.some(l=>Math.abs(l.inicio-novo.inicio)<0.5)){ reset(); return; }
+  if(lances.some(l=>Math.abs(l.inicio - novo.inicio) < 1)){ reset(); return; }
   if(lances.some(l=>novo.inicio<l.fim && novo.fim>l.inicio)){ alert("Sobreposição!"); reset(); return; }
 
   lances.push(novo);
   salvarTudo();
-  salvarLocal();
   lances.sort((a,b)=>a.inicio-b.inicio);
   clearInterval(interval);
   reset();
@@ -449,7 +436,7 @@ function calcDesc(i){
   let q=i+1;
   if(q===1) return 0;
   if(q>=10) return 0.2;
-  return 0.1+((q-2)*(0.1/8));
+  return Math.min(0.2, (q-1)*0.02);
 }
 
 function render(){
@@ -470,7 +457,7 @@ function render(){
 
       let info=document.createElement("div");
       info.className="info";
-      li.innerHTML=`<div class="info"><span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span><span class="valor">R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span></div>`;
+      li.innerHTML=`<div class="info"><span>Lance ${i+1} ${fmt(l.inicio)}-${fmt(l.fim)} (${l.dur.toFixed(1)}s)</span><span class="valor">💰 Esse lance: R$${valor.toFixed(2)} (-${Math.round(desc*100)}%)</span></div>`;
 
       let v=document.createElement("button");
       v.className="ver";
@@ -533,6 +520,9 @@ function pular(s){
 }
 
 function enviar(){
+  btn.innerText = "Enviando...";
+  btn.disabled = true;
+
   let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
 
   document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
@@ -592,7 +582,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
 
   // ENVIO MAIS CONFIÁVEL
-  window.location.href = `https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`;
+  window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`, '_blank');
   
   localStorage.removeItem('lances');
   localStorage.removeItem('pedidoLetto');
@@ -656,14 +646,6 @@ telInput.addEventListener('input', (e)=>{
 
   e.target.value = v;
 });
-
-function salvarLocal(){
-  localStorage.setItem('lances', JSON.stringify(lances));
-}
-
-if(lances.length){
-  render();
-}
 
 function salvarTudo(){
   const dados = {
