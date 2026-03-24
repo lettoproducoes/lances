@@ -418,14 +418,14 @@ li{
 /* HUD do contador */
 #contadorHUD{
   position:absolute;
-  top:10px;
-  right:10px;
+  top:0;
+  right:0;
 
-  background: rgba(0,0,0,0.2);   /* 👈 bem mais transparente */
-  backdrop-filter: blur(2px);    /* 👈 blur bem leve */
+  background: rgba(0,0,0,0.18);
+  backdrop-filter: blur(2px);
 
-  padding:5px 8px;
-  border-radius:8px;
+  padding:4px 6px; /* 👈 menor */
+  border-radius:0 0 0 8px; /* 👈 encaixa no canto */
 
   font-size:12px;
   font-weight:500;
@@ -434,7 +434,8 @@ li{
   display:none;
   z-index:10;
 
-  border:1px solid rgba(255,255,255,0.08); /* bem sutil */
+  border-left:1px solid rgba(255,255,255,0.08);
+  border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
 #contadorHUD{
@@ -445,7 +446,6 @@ li{
 /* quando estiver gravando */
 #contadorHUD.gravando{
   background: rgba(231, 76, 60, 0.25); /* 👈 leve e ainda visível */
-  border-color: rgba(255,255,255,0.15);
 }
 
 </style>
