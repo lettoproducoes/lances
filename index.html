@@ -336,6 +336,56 @@ li{
   z-index:3;
   pointer-events:none; /* para não interferir no clique do timeline */
 }
+
+#modal-alerta{
+  display: none;
+  position: fixed;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.7);
+  color:white;
+  font-size:18px;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:2000;
+}
+
+/* Animação de aparecimento do alerta */
+@keyframes aparecerAlerta {
+  0% { opacity: 0; transform: scale(0.8); }
+  60% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+#modal-alerta.mostrar {
+  display: flex !important;
+  animation: aparecerAlerta 0.5s ease-out;
+}
+
+/* animação de aparecimento já existente */
+@keyframes aparecerAlerta {
+  0% { opacity: 0; transform: scale(0.8); }
+  60% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* animação de saída */
+@keyframes desaparecerAlerta {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+
+#modal-alerta.mostrar {
+  display: flex !important;
+  animation: aparecerAlerta 0.5s ease-out;
+}
+
+#modal-alerta.fechar {
+  animation: desaparecerAlerta 0.3s forwards;
+}
+
 </style>
 </head>
 
@@ -461,9 +511,33 @@ li{
 
 </div>
 
+<div id="modal-alerta">
+  <div style="
+    background:#1e1e1e;
+    padding:20px 30px;
+    border-radius:12px;
+    text-align:center;
+    max-width:300px;
+  ">
+    <p id="mensagem-alerta"></p>
+    <button onclick="fecharAlerta()" style="
+      margin-top:15px;
+      padding:8px 15px;
+      border:none;
+      border-radius:6px;
+      background:#2ecc71;
+      color:#fff;
+      font-weight:bold;
+      cursor:pointer;
+    ">OK</button>
+  </div>
+</div>
+
 <script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
+let carregouPagina = false;
+
 function getVideoId(){
   const params = new URLSearchParams(window.location.search);
   return params.get('video') || '1175798353';
@@ -475,6 +549,8 @@ document.getElementById('player').src = `https://player.vimeo.com/video/${videoI
 const player = new Vimeo.Player('player');
 
 player.on('loaded', ()=>{
+  carregouPagina = true;
+  
   const tempoSalvo = localStorage.getItem('tempoVideo_'+videoId);
   
   if(tempoSalvo){
@@ -485,10 +561,9 @@ player.on('loaded', ()=>{
     });
   }
 
-  if(tempoSalvo){
-	  console.log("Continuar de onde parou?");
-  }  
-
+  setTimeout(()=>{
+    render(); // garante que lances já carregados sejam desenhados
+  }, 100); 
 });
 
 const timeline = document.getElementById("timeline");
@@ -552,7 +627,7 @@ player.on('timeupdate', d => {
       clearInterval(interval);
       contadorLance.classList.remove("alerta","piscar");
       player.pause().then(()=>{
-        alert("O lance atingiu o tempo máximo de 10 segundos e foi finalizado automaticamente.");
+        mostrarAlerta("O lance atingiu o tempo máximo de 10 segundos e foi finalizado automaticamente.");
         finalizar(d.seconds);
       });
     }
@@ -589,7 +664,7 @@ function inicioLance(){
           clearInterval(interval);
           contadorLance.classList.remove("alerta","piscar");
           player.pause().then(()=>{
-            alert("O lance atingiu o tempo máximo de 10 segundos e foi finalizado automaticamente.");
+            mostrarAlerta("O lance atingiu o tempo máximo de 10 segundos e foi finalizado automaticamente.");
             finalizar(sec);
           });
         }
@@ -603,7 +678,7 @@ function inicioLance(){
 }
 
 function fimLance(){
-  if(inicio===null) return alertPause("Marque início");
+  if(inicio===null) return mostrarAlerta("Marque início");
   player.getCurrentTime().then(f=>finalizar(f));
 }
 
@@ -612,11 +687,13 @@ function finalizar(fim){
   let dur = fim - inicio;
 
   if(dur < 5){
-    alertPause("O lance deve ter no mínimo 5 segundos");
-    reset();
+    player.pause().then(() => {       // pausa o vídeo primeiro
+      mostrarAlerta("O lance deve ter no mínimo 5 segundos");
+      reset();
+    });
     return;
   }
-
+  
   let novo = {inicio, fim, dur};
 
   // Verifica sobreposição
@@ -624,7 +701,7 @@ function finalizar(fim){
   if(sobreposto !== -1){
     // Pausa o vídeo antes de mostrar o alerta
     player.pause().then(()=>{
-      alertPause(`Sobreposição! Lance atual conflita com o Lance ${sobreposto + 1}`);
+      mostrarAlerta(`Sobreposição! Lance atual conflita com o Lance ${sobreposto + 1}`);
       reset();
     });
     return;
@@ -742,7 +819,7 @@ function pular(s){
 
 function enviar(){
   if(lances.length === 0){
-    alertPause("Adicione pelo menos 1 lance");
+    mostrarAlerta("Adicione pelo menos 1 lance");
     return;
   }
   
@@ -772,7 +849,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
 	const equipeValido = validarCampo(document.getElementById('equipe'),'texto');
 
 	if(!nomeValido || !telValido || !atletaValido || !equipeValido){
-	  alertPause("Preencha corretamente todos os campos!");
+	  mostrarAlerta("Preencha corretamente todos os campos!");
 	  return;
 	}
 	
@@ -943,13 +1020,48 @@ function formatTime(seconds){
   return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 
-document.getElementById('resumo-lances').innerText =
-  `${lances.length} lance${lances.length != 1 ? 's' : ''} selecionado${lances.length != 1 ? 's' : ''}`;
-  
 document.addEventListener("mouseup", ()=>arrastando=false);
 document.addEventListener("touchend", ()=>arrastando=false);
 
-</script>
+// Mostra o alerta com animação
+function mostrarAlerta(msg){
+  if(!msg || msg.trim() === "") return;
 
+  const modal = document.getElementById('modal-alerta');
+  const mensagem = document.getElementById('mensagem-alerta');
+
+  if(modal && mensagem){
+    mensagem.innerText = msg;
+
+    // Remove classe para reiniciar animação
+    modal.classList.remove('mostrar');
+    void modal.offsetWidth; // força reflow
+
+    modal.style.display = 'flex'; // garante que apareça
+    modal.classList.add('mostrar');
+  }
+}
+
+// Fecha o alerta com animação de saída
+function fecharAlerta(){
+  const modal = document.getElementById('modal-alerta');
+  if(!modal) return;
+
+  // animação de saída
+  modal.classList.add('fechar');  // adiciona classe para animação de saída
+
+  // quando a animação acabar, esconde o modal e limpa classes
+  modal.addEventListener('animationend', function handler(){
+    modal.style.display = 'none';
+    modal.classList.remove('mostrar', 'fechar');
+    modal.removeEventListener('animationend', handler);
+  });
+}
+
+// mantém acesso global
+window.mostrarAlerta = mostrarAlerta;
+window.fecharAlerta = fecharAlerta;
+
+</script>
 </body>
-</html>
+</html
