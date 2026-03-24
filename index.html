@@ -1107,15 +1107,27 @@ function fecharAlerta(){
 window.mostrarAlerta = mostrarAlerta;
 window.fecharAlerta = fecharAlerta;
 
-function mostrarAguarde(){
+let aguardeAtivo = false; // flag para bloquear múltiplos cliques rápidos
+
+function mostrarAguarde() {
   const modal = document.getElementById('modal-aguarde');
-  if(modal) modal.style.display = 'flex';
+  if(modal){
+    modal.style.display = 'flex';
+    aguardeAtivo = true;
+  }
 }
 
 function fecharAguarde(){
   const modal = document.getElementById('modal-aguarde');
-  if(modal) modal.style.display = 'none';
+  if(modal){
+    modal.style.display = 'none';
+    aguardeAtivo = false;
+  }
 }
+
+window.addEventListener('load', () => {
+  fecharAguarde(); // garante que o modal de aguarde não fique preso
+});
 
 // mantém acesso global se precisar chamar de qualquer lugar
 window.mostrarAguarde = mostrarAguarde;
