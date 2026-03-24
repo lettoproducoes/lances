@@ -766,6 +766,9 @@ function calcDesc(i){
 }
 
 function render() {
+  // Ordena os lances pelo início do vídeo
+  lances.sort((a, b) => a.inicio - b.inicio);
+
   lista.innerHTML = "";
   timeline.querySelectorAll(".range").forEach(e => e.remove());
 
