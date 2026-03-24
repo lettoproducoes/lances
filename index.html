@@ -484,27 +484,6 @@ li{
     <span style="color:#e74c3c;">Valores diferentes não são reconhecidos automaticamente</span>
   </div>
 
-  <!-- FORMULÁRIO -->
-  <div id="formulario">
-
-    <div class="input-group">
-      <input type="text" id="nome" placeholder="Seu nome completo" required>
-    </div>
-
-    <div class="input-group">
-      <input type="tel" id="telefone" placeholder="Seu WhatsApp com DDD" required>
-    </div>
-
-    <div class="input-group">
-      <input type="text" id="atleta" placeholder="Nome do atleta" required>
-    </div>
-
-    <div class="input-group">
-      <input type="text" id="equipe" placeholder="Equipe" required>
-    </div>
-
-  </div>
-
   <!-- SEGURANÇA -->
   <div style="text-align:center;font-size:12px;color:#aaa;margin-top:5px;">
     🔒 Seus dados estão seguros
@@ -613,13 +592,6 @@ if(dadosSalvos){
     const dados = JSON.parse(dadosSalvos);
 
     lances = dados.lances || [];
-
-    setTimeout(()=>{
-      if(dados.nome) document.getElementById('nome').value = dados.nome;
-      if(dados.telefone) document.getElementById('telefone').value = dados.telefone;
-      if(dados.atleta) document.getElementById('atleta').value = dados.atleta;
-      if(dados.equipe) document.getElementById('equipe').value = dados.equipe;
-    }, 200);
 
   }catch(e){
     lances = [];
@@ -883,33 +855,11 @@ function enviar(){
 
 document.getElementById('btn-confirmar').addEventListener('click', ()=>{
 
-  // CAPTURA DADOS
-  const nome = document.getElementById('nome').value.trim();
-  const telefone = document.getElementById('telefone').value.trim();
-  const atleta = document.getElementById('atleta').value.trim();
-  const equipe = document.getElementById('equipe').value.trim();
-
-  // VALIDAÇÃO
-	const nomeValido = validarCampo(document.getElementById('nome'),'texto');
-	const telValido = validarCampo(document.getElementById('telefone'),'telefone');
-	const atletaValido = validarCampo(document.getElementById('atleta'),'texto');
-	const equipeValido = validarCampo(document.getElementById('equipe'),'texto');
-
-	if(!nomeValido || !telValido || !atletaValido || !equipeValido){
-	  mostrarAlerta("Preencha corretamente todos os campos!");
-	  return;
-	}
-	
   let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
 
   let msg="⚽ *Pedido Letto*\n\n";
 
-  // DADOS DO CLIENTE
-  msg+=`👤 Nome: ${nome}\n`;
-  msg+=`📱 WhatsApp: ${telefone}\n`;
-  msg+=`🏃 Atleta: ${atleta}\n`;
-  msg+=`🏆 equipe/Treinador: ${equipe}\n\n`;
-
+  msg+=`Edição de Lances\n\n`;
   msg+=`🎥 Vídeo completo:\n${videoLink}\n\n`;
 
   // LANCES
@@ -972,33 +922,9 @@ function voltarEdicao(){
   document.getElementById('footer').style.display = 'flex';
 }
 
-const telInput = document.getElementById('telefone');
-
-telInput.addEventListener('input', (e)=>{
-  let v = e.target.value.replace(/\D/g,'');
-
-  if(v.length > 11) v = v.slice(0,11);
-
-  if(v.length > 10){
-    v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
-  }else if(v.length > 6){
-    v = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/, "($1) $2-$3");
-  }else if(v.length > 2){
-    v = v.replace(/^(\d{2})(\d{0,5})$/, "($1) $2");
-  }else{
-    v = v.replace(/^(\d*)$/, "($1");
-  }
-
-  e.target.value = v;
-});
-
 function salvarTudo(){
   const dados = {
-    lances: lances,
-    nome: document.getElementById('nome')?.value || '',
-    telefone: document.getElementById('telefone')?.value || '',
-    atleta: document.getElementById('atleta')?.value || '',
-    equipe: document.getElementById('equipe')?.value || ''
+    lances: lances
   };
 
   localStorage.setItem(`pedidoLetto_${videoId}`, JSON.stringify(dados));
@@ -1014,48 +940,6 @@ function salvarTudo(){
 if(lances.length){
   render();
 }
-
-function validarCampo(input, tipo){
-  let valor = input.value.trim();
-
-  if(tipo === 'texto'){
-    if(valor.length >= 3){
-      input.classList.add('valido');
-      input.classList.remove('invalido');
-      return true;
-    }
-  }
-
-  if(tipo === 'telefone'){
-    let numeros = valor.replace(/\D/g,'');
-    if(numeros.length >= 10){
-      input.classList.add('valido');
-      input.classList.remove('invalido');
-      return true;
-    }
-  }
-
-  input.classList.add('invalido');
-  input.classList.remove('valido');
-  return false;
-}
-
-// listeners
-document.getElementById('nome').addEventListener('input', e=>{
-  validarCampo(e.target,'texto');
-});
-
-document.getElementById('telefone').addEventListener('input', e=>{
-  validarCampo(e.target,'telefone');
-});
-
-document.getElementById('atleta').addEventListener('input', e=>{
-  validarCampo(e.target,'texto');
-});
-
-document.getElementById('equipe').addEventListener('input', e=>{
-  validarCampo(e.target,'texto');
-});
 
 function alertPause(msg){
   player.pause().then(() => {
