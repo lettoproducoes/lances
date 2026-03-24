@@ -633,6 +633,8 @@ const btn = document.getElementById("btnPlayPause");
 const handle = document.getElementById("handle");
 const contadorLance = document.getElementById("contadorLance"); // corrigido
 
+contadorLance.style.display = "none";
+
 const linksPagamento = {
    1: "https://mpago.la/27xoNkS",
    2: "https://mpago.la/27FEKiS",
@@ -729,12 +731,18 @@ function reset(){
   document.querySelector('.inicio').innerText = "🟢 Marcar Início";
   inicio=null;
   clearInterval(interval);
-  contadorLance.innerText="⏱ Duração do lance: 0 s";
+  
+  contadorLance.style.display = "none"; // 👈 ESCONDE
+  contadorLance.innerText = "⏱ Duração do lance: 0 s";
   contadorLance.classList.remove("alerta","piscar");
 }
 
 function inicioLance(){
   document.querySelector('.inicio').innerText = "🔴 Gravando...";
+  
+  contadorLance.style.display = "block"; // 👈 MOSTRA
+  contadorLance.innerText = "⏱ Duração do lance: 0 s";
+  
   player.play();
   player.getCurrentTime().then(t=>{
     clearInterval(interval);
@@ -768,6 +776,8 @@ function fimLance(){
 }
 
 function finalizar(fim){
+  contadorLance.style.display = "none";
+  
   if(inicio === null) return;
   let dur = fim - inicio;
 
@@ -890,8 +900,7 @@ function render() {
       timeline.appendChild(div);
     });
 
-    let minutos = tempoTotal / 60;
-	let minutosFormatado = minutos.toFixed(1).replace('.', ',');
+    let tempoFormatado = formatTempoTotal(tempoTotal);
 	
 	// Scrolla sempre para o último lance da lista
     requestAnimationFrame(() => {
@@ -901,7 +910,7 @@ function render() {
     });
 
     let economia = totalSem - total;
-    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan / ${minutosFormatado} Min)`;
+    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan / ${tempoFormatado})`;
     document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
   });
 }
@@ -926,11 +935,11 @@ function enviar(){
   }
     
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
-  let minutos = (tempoTotal / 60).toFixed(1).replace('.', ',');
+  let tempoFormatado = formatTempoTotal(tempoTotal);
   let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
 
   document.getElementById('resumo-lances').innerText =
-    `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${minutos} min`;
+    `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${tempoFormatado}`;
 
   document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
 
@@ -1138,6 +1147,17 @@ function confirmarExclusao(){
     render();
   }
   fecharConfirmacao();
+}
+
+function formatTempoTotal(segundos){
+  if(segundos < 60){
+    return `${Math.round(segundos)} Seg`;
+  }
+
+  const m = Math.floor(segundos / 60);
+  const s = Math.floor(segundos % 60);
+
+  return `${m}:${s.toString().padStart(2,'0')} Min`;
 }
 
 window.addEventListener('load', () => {
