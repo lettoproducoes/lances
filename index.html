@@ -445,7 +445,7 @@ li{
 
 <div id="footer">
   <div>
-    <div id="total">Total: R$0 (0 lances)</div>
+    <div id="total">R$0 (0 lances)</div>
     <div id="economia"></div>
   </div>  
   <button class="enviar" onclick="enviar()">📤 Enviar Pedido</button>
@@ -751,7 +751,6 @@ function render() {
     lances.forEach((l, i) => {
       let desc = calcDesc(i);
       let valor = preco * (1 - desc);
-	  tempoTotal += l.dur;
 
       total += valor;
       totalSem += preco;
@@ -814,7 +813,7 @@ function render() {
     });
 
     let minutos = tempoTotal / 60;
-	let minutosFormatado = minutos.toFixed(1);
+	let minutosFormatado = minutos.toFixed(1).replace('.', ',');
 	
 	// Scrolla sempre para o último lance da lista
     requestAnimationFrame(() => {
@@ -824,7 +823,7 @@ function render() {
     });
 
     let economia = totalSem - total;
-    document.getElementById("total").innerText = `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''}/${minutosFormatado} min)`;
+    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan/${minutosFormatado} Min)`;
     document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
   });
 }
