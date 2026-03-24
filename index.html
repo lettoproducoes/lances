@@ -791,11 +791,13 @@ function render() {
       let v = document.createElement("button");
       v.className = "ver";
       v.innerText = "▶️ Ver";
-      v.onclick = () => {
-        player.setCurrentTime(l.inicio);
-        document.querySelectorAll("li").forEach(x => x.classList.remove("ativo"));
-        li.classList.add("ativo");
-      };
+		v.onclick = () => {
+		  player.setCurrentTime(l.inicio).then(() => {
+			player.play(); // inicia automaticamente
+		  });
+		  document.querySelectorAll("li").forEach(x => x.classList.remove("ativo"));
+		  li.classList.add("ativo");
+		};
 
       let r = document.createElement("button");
       r.className = "remover";
