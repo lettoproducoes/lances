@@ -745,14 +745,17 @@ function render() {
   timeline.querySelectorAll(".range").forEach(e => e.remove());
 
   let total = 0, totalSem = 0;
+  let tempoTotal = 0;
 
   player.getDuration().then(duracao => {
     lances.forEach((l, i) => {
       let desc = calcDesc(i);
       let valor = preco * (1 - desc);
+	  tempoTotal += l.dur;
 
       total += valor;
       totalSem += preco;
+	  tempoTotal += l.dur;
 
       let li = document.createElement("li");
 
@@ -810,7 +813,10 @@ function render() {
       timeline.appendChild(div);
     });
 
-    // Scrolla sempre para o último lance da lista
+    let minutos = tempoTotal / 60;
+	let minutosFormatado = minutos.toFixed(1);
+	
+	// Scrolla sempre para o último lance da lista
     requestAnimationFrame(() => {
       if (lista.children.length) {
         lista.scrollTop = lista.children[lista.children.length - 1].offsetTop;
@@ -818,7 +824,7 @@ function render() {
     });
 
     let economia = totalSem - total;
-    document.getElementById("total").innerText = `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''})`;
+    document.getElementById("total").innerText = `Total: R$${total.toFixed(2)} (${lances.length} lance${lances.length != 1 ? 's' : ''}/${minutosFormatado} min)`;
     document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
   });
 }
