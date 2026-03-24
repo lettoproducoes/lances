@@ -421,8 +421,8 @@ li{
   top:10px;
   right:10px;
 
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.35); /* 👈 mais transparente */
+  backdrop-filter: blur(4px);   /* 👈 blur mais suave */
 
   padding:6px 10px;
   border-radius:8px;
@@ -434,7 +434,7 @@ li{
   display:none;
   z-index:10;
 
-  border:1px solid rgba(255,255,255,0.15);
+  border:1px solid rgba(255,255,255,0.1); /* 👈 mais sutil */
 }
 
 /* quando estiver gravando */
@@ -822,7 +822,7 @@ function fimLance(){
 }
 
 function finalizar(fim){
-  contadorLance.style.display = "none";
+  contadorHUD.style.display = "none";
   contadorHUD.classList.remove("gravando");
   
   if(inicio === null) return;
