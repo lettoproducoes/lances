@@ -847,13 +847,13 @@ function enviar(){
     mostrarAlerta("Adicione pelo menos 1 lance");
     return;
   }
-  
-  document.getElementById('resumo-lances').innerText =
-    `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${minutos} min`;
-  
+    
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
   let minutos = (tempoTotal / 60).toFixed(1).replace('.', ',');
   let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
+
+  document.getElementById('resumo-lances').innerText =
+    `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${minutos} min`;
 
   document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
 
