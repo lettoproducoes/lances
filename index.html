@@ -5,6 +5,10 @@
 <title>Letto Produções</title>
 
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body{
   margin:0;
   font-family:Arial;
@@ -13,6 +17,7 @@ body{
   display:flex;
   flex-direction:column;
   height:100vh;
+  overflow-x: hidden;
 }
 
 #lista {
@@ -492,8 +497,8 @@ li{
 
   <!-- ALERTA -->
   <div style="margin:10px;font-size:14px;text-align:center;">
-    ⚠️ Use <strong style="color:#2ecc71;">o valor exato</strong> no pagamento<br>
-    <span style="color:#e74c3c;">Valores diferentes não são reconhecidos automaticamente</span>
+    ⚠️ <strong style="color:#2ecc71;">Você será direcionado para o WhatsApp para enviar o seu pedido</strong><br>
+    <span style="color:#e74c3c;">Caso isto ocorra volte aqui e conclua o pagamento</span>
   </div>
 
   <!-- SEGURANÇA -->
@@ -505,7 +510,7 @@ li{
   <div id="confirmacao-footer">
 
     <div style="text-align:center;font-size:12px;color:#aaa;margin-bottom:8px;">
-      ⏱ Processamento por ordem de pagamento
+      ⏱ Edição/Envio por ordem de pagamento
     </div>
 
     <button onclick="voltarEdicao()" style="
@@ -628,6 +633,29 @@ const btn = document.getElementById("btnPlayPause");
 const handle = document.getElementById("handle");
 const contadorLance = document.getElementById("contadorLance"); // corrigido
 
+const linksPagamento = {
+   1: "https://mpago.la/27xoNkS",
+   2: "https://mpago.la/27FEKiS",
+   3: "https://mpago.la/1o68UaY",
+   4: "https://mpago.la/1jSqq7d",
+   5: "https://mpago.la/1ZZT4CA",
+   6: "https://mpago.la/2vbQSjx",
+   7: "https://mpago.la/2L6pHet",
+   8: "https://mpago.la/26sE4eK",
+   9: "https://mpago.la/15znhKQ",
+  10: "https://mpago.la/23n6whv",
+  11: "https://mpago.la/2WshQRU",
+  12: "https://mpago.la/2UNj6f4",
+  13: "https://mpago.la/1wLHiqA",
+  14: "https://mpago.la/1cmFko1",
+  15: "https://mpago.la/32C1eRQ",
+  16: "https://mpago.la/1mBwsug",
+  17: "https://mpago.la/32Thr3E",
+  18: "https://mpago.la/32Thr3E",
+  19: "https://mpago.la/2uparrt",
+  20: "https://mpago.la/1P9yr7J"
+};
+
 let ultimoSalvamento = 0;
 
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
@@ -743,6 +771,14 @@ function finalizar(fim){
   if(inicio === null) return;
   let dur = fim - inicio;
 
+  if (lances.length >= 20) {
+    player.pause().then(() => {
+      mostrarAlerta("🎬 Para um highlight profissional, recomendamos até 20 lances por jogo.\n\nAcima disso, o vídeo pode perder impacto e parecer apenas um momento de inspiração 😉");
+      reset();
+    });
+    return;
+  }
+  
   if(dur < 5){
     player.pause().then(() => {       // pausa o vídeo primeiro
       mostrarAlerta("O lance deve ter no mínimo 5 segundos");
@@ -898,20 +934,30 @@ function enviar(){
 
   document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
 
-  document.getElementById('tela-confirmacao').style.display = 'flex';
-  document.getElementById('footer').style.display = 'none';
+  // 🔥 PAUSA O VÍDEO ANTES DE TROCAR DE TELA
+  player.pause().then(() => {
+    document.getElementById('tela-confirmacao').style.display = 'flex';
+    document.getElementById('footer').style.display = 'none';
+  });
 }
 
 document.getElementById('btn-confirmar').addEventListener('click', ()=>{
 
+  const qtd = lances.length;
+  const linkPagamento = linksPagamento[qtd];
+
+  if(!linkPagamento){
+    mostrarAlerta("Quantidade de lances inválida para pagamento");
+    return;
+  }
+
+  // Monta mensagem (mantive seu padrão)
   let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
 
   let msg="⚽ *Pedido Letto*\n\n";
-
   msg+=`Edição de Lances\n\n`;
   msg+=`🎥 Vídeo completo:\n${videoLink}\n\n`;
 
-  // LANCES
   lances.forEach((l,i)=>{
     msg+=`▶️ Lance ${i+1}: ${formatTime(l.inicio)} - ${formatTime(l.fim)} (${l.dur.toFixed(1)}s)\n`;
   });
@@ -923,11 +969,15 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
 
-  // ENVIO MAIS CONFIÁVEL
-  window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`, '_blank');
-  
-  localStorage.removeItem(`pedidoLetto_${videoId}`)
+  // 🔥 ABRE O PAGAMENTO PRIMEIRO
+  window.open(linkPagamento, '_blank');
 
+  // ⏱ Pequeno delay e abre WhatsApp
+  setTimeout(()=>{
+    window.open(`https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`, '_blank');
+  }, 1000);
+
+  localStorage.removeItem(`pedidoLetto_${videoId}`);
 });
 
 // DRAG TIMELINE
