@@ -823,7 +823,7 @@ function render() {
     });
 
     let economia = totalSem - total;
-    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan/${minutosFormatado} Min)`;
+    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan / ${minutosFormatado} Min)`;
     document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
   });
 }
