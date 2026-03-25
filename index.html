@@ -840,10 +840,10 @@ function finalizar(fim){
     });
     return;
   }
-  
-  if(dur < 5){
-    player.pause().then(() => {       // pausa o vídeo primeiro
-      mostrarAlerta("O lance deve ter no mínimo 5 segundos");
+   
+  if(dur < 3){
+    player.pause().then(() => {
+      mostrarAlerta("O lance deve ter no mínimo 3 segundos");
       reset();
     });
     return;
