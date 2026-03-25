@@ -710,7 +710,7 @@ const linksPagamento = {
 let ultimoSalvamento = 0;
 
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
-const preco = 11;
+const preco = 0.99;
 
 let dadosSalvos = localStorage.getItem(`pedidoLetto_${videoId}`);
 
@@ -896,11 +896,13 @@ function render() {
   player.getDuration().then(duracao => {
     lances.forEach((l, i) => {
       let desc = calcDesc(i);
-      let valor = preco * (1 - desc);
+      let valor = (i < 5) 
+         ? preco * (1 - desc) 
+         : 11 * (1 - desc);
 
-      total += valor;
-      totalSem += preco;
-	  tempoTotal += l.dur;
+		total += valor;
+		totalSem += (i < 5 ? preco : 11);
+		tempoTotal += l.dur;
 
       let li = document.createElement("li");
 
@@ -988,7 +990,10 @@ function enviar(){
     
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
   let tempoFormatado = formatTempoTotal(tempoTotal);
-  let total = lances.reduce((acc,l,i)=>acc + preco*(1-calcDesc(i)),0);
+	let total = lances.reduce((acc,l,i)=>{
+	  let base = i < 5 ? preco : 11;
+	  return acc + base * (1 - calcDesc(i));
+	},0);
 
   document.getElementById('resumo-lances').innerText =
     `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${tempoFormatado}`;
