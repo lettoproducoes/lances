@@ -1044,7 +1044,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
   let descontoFinal = totalSem - total;
 
-  msg+=`⏱ Tempo total dos lances: ${tempoFormatado}\n\n`;
+  msg+=`\n⏱ Tempo total dos lances: ${tempoFormatado}\n\n`;
 
   msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
@@ -1058,7 +1058,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   // Redireciona na mesma aba (NUNCA é bloqueado)
   window.location.href = `https://wa.me/5531975017611?text=${encodeURIComponent(msg)}`;
 
-  localStorage.removeItem(`pedidoLetto_${videoId}`);
+  //localStorage.removeItem(`pedidoLetto_${videoId}`);
 });
 
 // DRAG TIMELINE
