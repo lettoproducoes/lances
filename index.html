@@ -19,6 +19,7 @@ body{
   height:100vh;
   overflow-x: hidden;
   min-height:100dvh;
+  overflow: hidden;
 }
 
 #lista {
@@ -106,6 +107,8 @@ button{
   flex:1;
   overflow:auto;
   padding:8px;
+  height:100%;
+  overflow-y:auto;  
 }
 
 li{
@@ -477,12 +480,15 @@ li{
     background:#181818;
     border-radius:10px;
     overflow:hidden;
+    min-height:0;
   }
 
   #lancesContainer{
     flex:1;
     overflow:auto;
     padding:10px;
+    height:100%;
+    overflow-y:auto;	
   }
 
   /* aumenta vídeo no desktop */
@@ -497,8 +503,10 @@ li{
 }
 
 #layout{
-  flex:1;
-  padding-bottom:90px; /* altura do footer */
+  height: calc(100dvh - 60px - 90px);
+  /* 60px ≈ header | 90px ≈ footer */
+  display:flex;  
+  padding-bottom:90px; /* altura do footer */  
 }
 
 </style>
