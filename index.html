@@ -18,6 +18,7 @@ body{
   flex-direction:column;
   height:100vh;
   overflow-x: hidden;
+  min-height:100vh;
 }
 
 #lista {
@@ -455,7 +456,6 @@ li{
     display:flex;
     gap:15px;
     padding:10px;
-    height: calc(100vh - 140px);
   }
 
   #lado-esquerdo{
@@ -488,6 +488,10 @@ li{
   .controls{
     margin:3px;
   }
+}
+
+#layout{
+  flex:1;
 }
 
 </style>
