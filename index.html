@@ -17,9 +17,9 @@ body{
   display:flex;
   flex-direction:column;
   height:100vh;
+  min-height:100dvh; 
   overflow-x: hidden;
-  min-height:100dvh;
-  overflow: hidden;
+  overflow-y: auto;  
 }
 
 #lista {
@@ -109,6 +109,8 @@ button{
   padding:8px;
   height:100%;
   overflow-y:auto;  
+  width:100%;
+  max-width:100%;  
 }
 
 li{
@@ -507,6 +509,12 @@ li{
   /* 60px ≈ header | 90px ≈ footer */
   display:flex;  
   padding-bottom:90px; /* altura do footer */  
+  flex-direction:column;
+}
+
+* {
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 </style>
