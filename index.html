@@ -448,6 +448,48 @@ li{
   background: rgba(231, 76, 60, 0.25); /* 👈 leve e ainda visível */
 }
 
+/* LAYOUT DESKTOP */
+@media (min-width: 1024px){
+
+  #layout{
+    display:flex;
+    gap:15px;
+    padding:10px;
+    height: calc(100vh - 140px);
+  }
+
+  #lado-esquerdo{
+    flex: 2;
+    display:flex;
+    flex-direction:column;
+  }
+
+  #lado-direito{
+    flex: 1;
+    display:flex;
+    flex-direction:column;
+    background:#181818;
+    border-radius:10px;
+    overflow:hidden;
+  }
+
+  #lancesContainer{
+    flex:1;
+    overflow:auto;
+    padding:10px;
+  }
+
+  /* aumenta vídeo no desktop */
+  #player-container{
+    height: 420px;
+  }
+
+  /* timeline e controles mais compactos */
+  .controls{
+    margin:3px;
+  }
+}
+
 </style>
 </head>
 
@@ -480,6 +522,10 @@ li{
 
 <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
 
+<div id="layout">
+
+<div id="lado-esquerdo">
+
 <div id="player-container">
   <iframe id="player" allow="autoplay; fullscreen"></iframe>
 
@@ -504,9 +550,14 @@ li{
 </div>
 
 <div id="contadorLance">⏱ Duração do lance: 0 s</div>
+</div>
 
-<div id="lancesContainer">
-  <ul id="lista"></ul>
+<div id="lado-direito">
+  <div id="lancesContainer">
+    <ul id="lista"></ul>
+  </div>
+</div>
+
 </div>
 
 <div id="footer">
