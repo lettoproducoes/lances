@@ -710,7 +710,18 @@ const linksPagamento = {
 let ultimoSalvamento = 0;
 
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
+
 const preco = 0.99;
+
+function getPrecoBase(i){
+  return i < 5 ? preco : 11;
+}
+
+function getValorComDesconto(i){
+  const base = getPrecoBase(i);
+  const desc = calcDesc(i);
+  return base * (1 - desc);
+}
 
 let dadosSalvos = localStorage.getItem(`pedidoLetto_${videoId}`);
 
@@ -896,13 +907,13 @@ function render() {
   player.getDuration().then(duracao => {
     lances.forEach((l, i) => {
       let desc = calcDesc(i);
-      let valor = (i < 5) 
-         ? preco * (1 - desc) 
-         : 11 * (1 - desc);
 
-		total += valor;
-		totalSem += (i < 5 ? preco : 11);
-		tempoTotal += l.dur;
+	  let valor = getValorComDesconto(i);
+
+	  total += valor;
+	  totalSem += getPrecoBase(i);
+
+      tempoTotal += l.dur;
 
       let li = document.createElement("li");
 
@@ -990,10 +1001,8 @@ function enviar(){
     
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
   let tempoFormatado = formatTempoTotal(tempoTotal);
-	let total = lances.reduce((acc,l,i)=>{
-	  let base = i < 5 ? preco : 11;
-	  return acc + base * (1 - calcDesc(i));
-	},0);
+
+  let total = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
 
   document.getElementById('resumo-lances').innerText =
     `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${tempoFormatado}`;
@@ -1017,6 +1026,9 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
     return;
   }
 
+  let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
+  let tempoFormatado = formatTempoTotal(tempoTotal);
+
   // Monta mensagem (mantive seu padrão)
   let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
 
@@ -1028,9 +1040,11 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
     msg+=`▶️ Lance ${i+1}: ${formatTime(l.inicio)}-${formatTime(l.fim)} (${l.dur.toFixed(1)}s)\n`;
   });
 
-  let total = lances.reduce((acc,l,index)=>acc+preco*(1-calcDesc(index)),0);
-  let totalSem=lances.length*preco;
-  let descontoFinal=totalSem-total;
+  let total = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+  let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
+  let descontoFinal = totalSem - total;
+
+  msg+=`⏱ Tempo total dos lances: ${tempoFormatado}\n\n`;
 
   msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
