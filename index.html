@@ -458,6 +458,13 @@ li{
   background: rgba(231, 76, 60, 0.25); /* 👈 leve e ainda visível */
 }
 
+#layout{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+
 /* LAYOUT DESKTOP */
 @media (min-width: 1024px){
 
@@ -465,12 +472,14 @@ li{
     display:flex;
     gap:15px;
     padding:10px;
+	flex-direction:row;
   }
 
   #lado-esquerdo{
     flex: 2;
     display:flex;
     flex-direction:column;
+	min-width:0;
   }
 
   #lado-direito{
@@ -502,13 +511,6 @@ li{
   .controls{
     margin:3px;
   }
-}
-
-#layout{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  min-height:0;
 }
 
 </style>
