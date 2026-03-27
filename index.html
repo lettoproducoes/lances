@@ -845,6 +845,11 @@ player.on('timeupdate', d => {
     timeDisplay.innerText = `${formatTime(Math.floor(d.seconds))} / ${formatTime(Math.floor(d.duration))}`;
 
     if(d.seconds < ultimoTempo - 0.5) reset();
+
+    if(Math.abs(d.seconds - ultimoTempo) > 1.5){
+      cancelarInicioPorInteracao();
+    }
+	
     ultimoTempo = d.seconds;
 
     if(d.seconds - ultimoSalvamento > 3){
@@ -865,6 +870,8 @@ player.on('timeupdate', d => {
 });
 
 timeline.onclick = e => {
+  cancelarInicioPorInteracao();
+  
   const r = timeline.getBoundingClientRect();
   const p = (e.clientX - r.left) / r.width;
 
@@ -1078,6 +1085,8 @@ function toggle(){
 }
 
 function pular(s){
+  cancelarInicioPorInteracao();
+  
   mostrarAguarde();
   player.getCurrentTime()
     .then(t => player.setCurrentTime(t + s))
@@ -1174,6 +1183,8 @@ document.addEventListener("touchmove", drag);
 function drag(e){
   if(!arrastando) return;
 
+  cancelarInicioPorInteracao();
+  
   let clientX = e.touches? e.touches[0].clientX : e.clientX;
 
   const rect=timeline.getBoundingClientRect();
@@ -1327,6 +1338,17 @@ function formatTempoTotal(segundos){
 
 window.addEventListener('load', () => {
   fecharAguarde(); // garante que o modal de aguarde não fique preso
+});
+
+function cancelarInicioPorInteracao(){
+  if(inicio !== null){
+    reset();
+    //mostrarAlerta("⚠️ Marcação cancelada ao mover o vídeo");
+  }
+}
+
+player.on('seeked', () => {
+  cancelarInicioPorInteracao();
 });
 
 // mantém acesso global se precisar chamar de qualquer lugar
