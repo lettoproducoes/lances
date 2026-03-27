@@ -110,9 +110,10 @@ button{
   overflow-y:auto;  
   width:100%;
   
-  /* 🔥 ESSENCIAL */
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;  
+  
+  padding-bottom: 90px;
 }
 
 li{
@@ -1054,11 +1055,15 @@ function render() {
     let tempoFormatado = formatTempoTotal(tempoTotal);
 	
 	// Scrolla sempre para o último lance da lista
-    requestAnimationFrame(() => {
-      if (lista.children.length) {
-        lista.scrollTop = lista.children[lista.children.length - 1].offsetTop;
-      }
-    });
+	requestAnimationFrame(() => {
+	  const ultimo = lista.lastElementChild;
+	  if (ultimo) {
+		ultimo.scrollIntoView({
+		  behavior: "smooth",
+		  block: "end"
+		});
+	  }
+	});
 
     let economia = totalSem - total;
     document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan / ${tempoFormatado})`;
