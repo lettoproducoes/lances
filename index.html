@@ -528,6 +528,59 @@ li{
   }
 }
 
+/* OPÇÕES DE EDIÇÃO (CORTINA) */
+#opcoes-edicao{
+  margin:10px;
+}
+
+.opcao{
+  background:#181818;
+  border-radius:10px;
+  margin-bottom:8px;
+  overflow:hidden;
+  border:1px solid #333;
+}
+
+.opcao-header{
+  padding:14px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.opcao-header.destaque{
+  color:#2ecc71;
+}
+
+.opcao-content{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height 0.3s ease;
+  padding:0 14px;
+  font-size:14px;
+}
+
+.opcao.active .opcao-content{
+  max-height:200px;
+  padding:10px 14px 14px;
+}
+
+.preco{
+  color:#2ecc71;
+  font-weight:bold;
+  margin:8px 0;
+}
+
+.btn-opcao{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#3498db;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+
 </style>
 </head>
 
@@ -617,11 +670,13 @@ li{
     <div style="font-size:13px;color:#aaa;">Valor total</div>
 
     <div id="total-confirmacao">R$0</div>
-
+	
     <div style="font-size:13px;color:#aaa;margin-top:5px;">
       🎬 <span id="resumo-lances">0 lances</span>
     </div>
 
+	<div id="extra-edicao" style="font-size:14px;color:#aaa;text-align:center;margin-top:5px;"></div>
+	
     <div style="font-size:12px;color:#2ecc71;margin-top:6px;">
       💡 Desconto aplicado automaticamente
     </div>
@@ -635,7 +690,7 @@ li{
 
   <!-- ALERTA -->
   <div style="margin:10px;font-size:14px;text-align:center;">
-    ⚠️ <strong style="color:#2ecc71;">Você será direcionado para o WhatsApp para enviar seu pedido e fazer o pagamento</strong><br>
+    ⚠️ <strong style="color:#2ecc71;">Você será direcionado para o WhatsApp para enviar seu pedido, nele esta o link para pagamento</strong><br>
 	<span style="color:#e74c3c;">NÃO ALTERE NADA NA MENSAGEM</span>
   </div>
 
@@ -643,6 +698,63 @@ li{
   <div style="text-align:center;font-size:12px;color:#aaa;margin-top:5px;">
     🔒 Seus dados estão seguros
   </div>
+  
+	<!-- ESCOLHA DO FORMATO -->
+	<div id="opcoes-edicao">
+
+	  <!-- BÁSICO -->
+	  <div class="opcao">
+		<div class="opcao-header" onclick="toggleOpcao(this)">
+		  🟢 Somente lances
+		</div>
+
+		<div class="opcao-content">
+		  <p>Receba apenas os lances selecionados, sem edição.</p>
+		  <p class="preco">💰 Incluso</p>
+		  <button onclick="selecionarOpcao('basico', this)" class="btn-opcao">Selecionar</button>
+		</div>
+	  </div>
+
+	  <!-- RECOMENDADO -->
+      <div class="opcao active">
+		<div class="opcao-header destaque" onclick="toggleOpcao(this)">
+		  🟡 Highlight para olheiros ⭐ (Recomendado)
+		</div>
+
+		<div class="opcao-content">
+		  <p>Organização profissional dos lances, ideal para avaliação.</p>
+		  <p class="preco">💰 + R$29,90</p>
+		  <button onclick="selecionarOpcao('highlight', this)" class="btn-opcao">Selecionar</button>
+		</div>
+	  </div>
+
+	  <!-- PREMIUM -->
+	  <div class="opcao">
+		<div class="opcao-header" onclick="toggleOpcao(this)">
+		  🔴 Vídeo para redes sociais
+		</div>
+
+		<div class="opcao-content">
+		  <p>Edição dinâmica com cortes e foco no atleta.</p>
+		  <p class="preco">💰 + R$39,90</p>
+		  <button onclick="selecionarOpcao('social', this)" class="btn-opcao">Selecionar</button>
+		</div>
+	  </div>
+
+		<!-- COMBO -->
+		<div class="opcao">
+		  <div class="opcao-header destaque" onclick="toggleOpcao(this)">
+			🔥 Highlight + Redes Sociais (Melhor custo-benefício)
+		  </div>
+
+		  <div class="opcao-content">
+			<p>Receba o vídeo completo para olheiros + versão otimizada para redes sociais.</p>
+			<p class="preco">💰 + R$49,90</p>
+			<button onclick="selecionarOpcao('combo', this)" class="btn-opcao">Selecionar</button>
+		  </div>
+		</div>
+
+	</div>  
 
   <!-- FOOTER FIXO -->
   <div id="confirmacao-footer">
@@ -1109,7 +1221,7 @@ function enviar(){
   document.getElementById('resumo-lances').innerText =
     `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${tempoFormatado}`;
 
-  document.getElementById('total-confirmacao').innerText = `R$${total.toFixed(2)}`;
+  atualizarTotalConfirmacao();
 
   // 🔥 PAUSA O VÍDEO ANTES DE TROCAR DE TELA
   player.pause().then(() => {
@@ -1128,6 +1240,24 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
     return;
   }
 
+	let adicional = 0;
+
+	if(opcaoSelecionada === "highlight") adicional = 29.90;
+	if(opcaoSelecionada === "social") adicional = 39.90;
+	if(opcaoSelecionada === "combo") adicional = 49.90;
+
+	// calcula total base primeiro
+	//let total = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+	//let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
+	//let descontoFinal = totalSem - total;
+
+	// depois soma adicional
+	let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+	let total = totalBase + adicional;
+
+	let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
+	let descontoFinal = totalSem - totalBase;
+
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
   let tempoFormatado = formatTempoTotal(tempoTotal);
 
@@ -1142,12 +1272,17 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
     msg+=`▶️ Lance ${i+1}: ${formatTime(l.inicio)}-${formatTime(l.fim)} (${l.dur.toFixed(1)}s)\n`;
   });
 
-  let total = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
-  let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
-  let descontoFinal = totalSem - total;
+  let nomeFormatado = "Lances sem edição";
+
+  if(opcaoSelecionada === "highlight") nomeFormatado = "Highlight para olheiros";
+  if(opcaoSelecionada === "social") nomeFormatado = "Vídeo para redes sociais";
+  if(opcaoSelecionada === "combo") nomeFormatado = "Highlight + Redes sociais";
+
+  msg+=`\n🎬 Formato escolhido: ${nomeFormatado}\n`;
+  msg+=`💰 Edição: R$${adicional.toFixed(2)}\n`;
 
   msg+=`\n🎬 ${lances.length} lances selecionados\n`;
-  msg+=`⏱ Tempo total: ${tempoFormatado}\n\n`;
+  msg+=`⏱ Tempo total: ${tempoFormatado}\n`;
 
   msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
@@ -1350,6 +1485,60 @@ function cancelarInicioPorInteracao(){
 player.on('seeked', () => {
   cancelarInicioPorInteracao();
 });
+
+let opcaoSelecionada = "highlight"; // padrão
+
+function toggleOpcao(element){
+  const opcao = element.parentElement;
+
+  document.querySelectorAll('.opcao').forEach(o=>{
+    if(o !== opcao) o.classList.remove('active');
+  });
+
+  opcao.classList.toggle('active');
+}
+
+function selecionarOpcao(tipo, el){
+  opcaoSelecionada = tipo;
+
+  document.querySelectorAll('.btn-opcao').forEach(btn=>{
+    btn.innerText = "Selecionar";
+  });
+
+  el.innerText = "✅ Selecionado";
+
+  // 🔥 ATUALIZA O TOTAL NA HORA
+  atualizarTotalConfirmacao();
+}
+
+function getAdicional(){
+  if(opcaoSelecionada === "highlight") return 29.90;
+  if(opcaoSelecionada === "social") return 39.90;
+  if(opcaoSelecionada === "combo") return 49.90;
+  return 0;
+}
+
+function atualizarTotalConfirmacao(){
+  let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+  let adicional = getAdicional();
+  let totalFinal = totalBase + adicional;
+
+  document.getElementById('total-confirmacao').innerText = `R$${totalFinal.toFixed(2)}`;
+}
+
+function atualizarTotalConfirmacao(){
+  let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+  let adicional = getAdicional();
+  let totalFinal = totalBase + adicional;
+
+  document.getElementById('total-confirmacao').innerText = `R$${totalFinal.toFixed(2)}`;
+
+  let texto = adicional > 0 
+    ? `🎬 Edição: + R$${adicional.toFixed(2)}`
+    : `🎬 Sem edição adicional`;
+
+  document.getElementById('extra-edicao').innerText = texto;
+}
 
 // mantém acesso global se precisar chamar de qualquer lugar
 window.mostrarAguarde = mostrarAguarde;
