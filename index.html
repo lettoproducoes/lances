@@ -675,32 +675,20 @@ li{
       🎬 <span id="resumo-lances">0 lances</span>
     </div>
 
-	<div id="extra-edicao" style="font-size:14px;color:#aaa;text-align:center;margin-top:5px;"></div>
-	
-    <div style="font-size:12px;color:#2ecc71;margin-top:6px;">
-      💡 Desconto aplicado automaticamente
-    </div>
+	   <div id="extra-edicao" style="font-size:14px;color:#aaa;text-align:center;margin-top:5px;"></div>
 
-  </div>
-
-  <!-- PROVA SOCIAL -->
-  <div style="text-align:center;font-size:13px;color:#2ecc71;margin-top:5px;">
-    🔥 Mais de 100 atletas já elevaram seus highlights com a Letto
   </div>
 
   <!-- ALERTA -->
   <div style="margin:10px;font-size:14px;text-align:center;">
-    ⚠️ <strong style="color:#2ecc71;">Você será direcionado para o WhatsApp para enviar seu pedido, nele esta o link para pagamento</strong><br>
-	<span style="color:#e74c3c;">NÃO ALTERE NADA NA MENSAGEM</span>
+    ⚠️ <strong style="color:#2ecc71;">Você será redirecionado para o WhatsApp para finalizar seu pedido</strong><br>
+    💳 <strong>O link de pagamento já estará na mensagem</strong><br>
+    <span style="color:#e74c3c;">NÃO ALTERE NADA NA MENSAGEM</span><br>
+    <span style="text-align:center;font-size:12px;color:#aaa;margin-top:5px;">🔒 Seus dados estão seguros</span>
   </div>
-
-  <!-- SEGURANÇA -->
-  <div style="text-align:center;font-size:12px;color:#aaa;margin-top:5px;">
-    🔒 Seus dados estão seguros
-  </div>
-  
-	<!-- ESCOLHA DO FORMATO -->
-	<div id="opcoes-edicao">
+ 
+   <!-- ESCOLHA DO FORMATO -->
+   <div id="opcoes-edicao">
 
 	  <!-- BÁSICO -->
 	  <div class="opcao">
@@ -1096,10 +1084,19 @@ function finalizar(fim){
 }
 
 function calcDesc(i){
-  let q=i+1;
-  if(q===1) return 0;
-  if(q>=10) return 0.2;
-  return Math.min(0.2, (q-1)*0.02);
+  //let q=i+1;
+  //if(q===1) return 0;
+  //if(q>=10) return 0.10;
+  //return Math.min(0.10, (q-1)*0.10);
+  return 0; // 🔒 desconto desativado
+}
+
+function getBonus(qtd){
+  //if(qtd >= 15) return 3;
+  //if(qtd >= 10) return 2;
+  //if(qtd >= 5) return 1;
+  
+  return 0; // 🔒 bônus desativado
 }
 
 function render() {
@@ -1128,29 +1125,30 @@ function render() {
       li.innerHTML = `
         <div class="info">
           <span>${i + 1}. ${formatTime(l.inicio)}-${formatTime(l.fim)} (${l.dur.toFixed(1)}s)</span>
-          <span class="valor">💰Esse Lance: R$${valor.toFixed(2)} (-${Math.round(desc * 100)}%)</span>
+          <span class="valor">💰Esse Lance: R$${valor.toFixed(2)}</span>
         </div>
       `;
 
       let v = document.createElement("button");
       v.className = "ver";
       v.innerText = "▶️ Ver";
-		v.onclick = () => {
-		  player.setCurrentTime(l.inicio).then(() => {
-			player.play(); // inicia automaticamente
-		  });
-		  document.querySelectorAll("li").forEach(x => x.classList.remove("ativo"));
-		  li.classList.add("ativo");
-		};
+
+      v.onclick = () => {
+        player.setCurrentTime(l.inicio).then(() => {
+       player.play(); // inicia automaticamente
+        });
+        document.querySelectorAll("li").forEach(x => x.classList.remove("ativo"));
+        li.classList.add("ativo");
+      };
 
       let r = document.createElement("button");
       r.className = "remover";
       r.innerText = "🗑️ Remover";
 
-		r.onclick = async () => {
-		  await player.pause();
-		  abrirConfirmacao(i);
-		};
+      r.onclick = async () => {
+        await player.pause();
+        abrirConfirmacao(i);
+      };
 
       let box = document.createElement("div");
       box.className = "linhaBotoes";
@@ -1175,20 +1173,29 @@ function render() {
 
     let tempoFormatado = formatTempoTotal(tempoTotal);
 	
-	// Scrolla sempre para o último lance da lista
-	requestAnimationFrame(() => {
-	  const ultimo = lista.lastElementChild;
-	  if (ultimo) {
-		ultimo.scrollIntoView({
-		  behavior: "smooth",
-		  block: "end"
-		});
-	  }
-	});
+    // Scrolla sempre para o último lance da lista
+    requestAnimationFrame(() => {
+      const ultimo = lista.lastElementChild;
+      if (ultimo) {
+     ultimo.scrollIntoView({
+       behavior: "smooth",
+       block: "end"
+     });
+      }
+    });
+
+    let bonus = getBonus(lances.length);
+
+    //document.getElementById("economia").innerText =
+    //  bonus > 0 
+    //    ? `🎁 ${bonus} lance${bonus>1?'s':''} grátis aplicado`
+    //    : "";
 
     let economia = totalSem - total;
-    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan / ${tempoFormatado})`;
-    document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
+    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} lance${lances.length !== 1 ? 's' : ''})`;
+    //document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan / ${tempoFormatado})`;
+    //document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
+    document.getElementById("economia").innerText = "";
   });
 }
 
@@ -1216,10 +1223,22 @@ function enviar(){
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
   let tempoFormatado = formatTempoTotal(tempoTotal);
 
-  let total = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+  let qtd = lances.length;
+  let bonus = getBonus(qtd);
+
+  let total = 0;
+
+  lances.forEach((l, i) => {
+    // últimos lances viram grátis
+    if(i >= qtd - bonus){
+      return; // não soma
+    }
+    total += getPrecoBase(i);
+  });
 
   document.getElementById('resumo-lances').innerText =
-    `${lances.length} lance${lances.length != 1 ? 's' : ''} / ${tempoFormatado}`;
+    //`${lances.length} lance${lances.length != 1 ? 's' : ''} / ${tempoFormatado}`;
+    `${lances.length} lance${lances.length != 1 ? 's' : ''}`;
 
   atualizarTotalConfirmacao();
 
@@ -1245,11 +1264,6 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
 	if(opcaoSelecionada === "highlight") adicional = 29.90;
 	if(opcaoSelecionada === "social") adicional = 39.90;
 	if(opcaoSelecionada === "combo") adicional = 49.90;
-
-	// calcula total base primeiro
-	//let total = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
-	//let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
-	//let descontoFinal = totalSem - total;
 
 	// depois soma adicional
 	let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
@@ -1522,6 +1536,13 @@ function atualizarTotalConfirmacao(){
   let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
   let adicional = getAdicional();
   let totalFinal = totalBase + adicional;
+
+  let bonus = getBonus(lances.length);
+
+  if(bonus > 0){
+    document.getElementById('extra-edicao').innerText += 
+      ` | 🎁 ${bonus} lance${bonus>1?'s':''} grátis`;
+  }
 
   document.getElementById('total-confirmacao').innerText = `R$${totalFinal.toFixed(2)}`;
 }
