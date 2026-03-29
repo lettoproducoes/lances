@@ -774,7 +774,7 @@ li{
       </div>
 
       <div class="opcao-content">
-     <p>Receba versão para olheiros + versão para redes sociais.</p>
+     <p>Receba versão olheiros + versão redes sociais.</p>
      <p>👉 Melhor opção pra quem quer visibilidade + avaliação.</p>
      <p class="preco">💰 + R$49,90</p>
      
@@ -1416,6 +1416,11 @@ function drag(e){
 function voltarEdicao(){
   document.getElementById('tela-confirmacao').style.display = 'none';
   document.getElementById('footer').style.display = 'flex';
+  
+  // 🔥 FECHA TODAS AS CORTINAS
+  document.querySelectorAll('.opcao').forEach(o=>{
+    o.classList.remove('active');
+  });  
 }
 
 function salvarTudo(){
