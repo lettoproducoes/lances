@@ -205,6 +205,7 @@ li{
   display:none;
   flex-direction:column;
   z-index:999;
+  overflow:hidden; /* 🔥 impede o scroll geral */
 }
 
 #tela-confirmacao h2{
@@ -581,6 +582,14 @@ li{
   cursor:pointer;
 }
 
+#confirmacao-conteudo{
+  flex:1;
+  overflow-y:auto;
+  padding-bottom:20px;
+
+  -webkit-overflow-scrolling: touch;
+}
+
 </style>
 </head>
 
@@ -661,88 +670,92 @@ li{
 
 <div id="tela-confirmacao">
 
-  <!-- HEADER -->
-  <h2>💰 Finalizar Pedido</h2>
+  
+  <div id="confirmacao-conteudo">
 
-  <!-- RESUMO -->
-  <div class="total-box">
+    <!-- HEADER -->
+    <h2>💰 Finalizar Pedido</h2>
 
-    <div style="font-size:13px;color:#aaa;">Valor total</div>
+    <!-- RESUMO -->
+    <div class="total-box">
 
-    <div id="total-confirmacao">R$0</div>
-	
-    <div style="font-size:13px;color:#aaa;margin-top:5px;">
-      🎬 <span id="resumo-lances">0 lances</span>
+      <div style="font-size:13px;color:#aaa;">Valor total</div>
+
+      <div id="total-confirmacao">R$0</div>
+   
+      <div style="font-size:13px;color:#aaa;margin-top:5px;">
+        🎬 <span id="resumo-lances">0 lances</span>
+      </div>
+
+      <div id="extra-edicao" style="font-size:14px;color:#aaa;text-align:center;margin-top:5px;"></div>
+
     </div>
 
-	   <div id="extra-edicao" style="font-size:14px;color:#aaa;text-align:center;margin-top:5px;"></div>
+    <!-- ALERTA -->
+    <div style="margin:10px;font-size:14px;text-align:center;">
+      ⚠️ <strong style="color:#2ecc71;">Você será redirecionado para o WhatsApp</strong><br>
+      💳 <strong>O link de pagamento já estará na mensagem</strong><br>
+      <span style="color:#e74c3c;">NÃO ALTERE NADA NA MENSAGEM</span><br>
+    </div>
+   
+     <!-- ESCOLHA DO FORMATO -->
+     <div id="opcoes-edicao">
 
+     <!-- BÁSICO -->
+     <div class="opcao">
+    <div class="opcao-header" onclick="toggleOpcao(this)">
+      🟢 Somente lances
+    </div>
+
+    <div class="opcao-content">
+      <p>Receba apenas os lances selecionados, sem edição.</p>
+      <p class="preco">💰 Incluso</p>
+      <button onclick="selecionarOpcao('basico', this)" class="btn-opcao">Selecionar</button>
+    </div>
+     </div>
+
+     <!-- RECOMENDADO -->
+        <div class="opcao active">
+    <div class="opcao-header destaque" onclick="toggleOpcao(this)">
+      🟡 Highlight para olheiros ⭐ (Recomendado)
+    </div>
+
+    <div class="opcao-content">
+      <p>Organização profissional dos lances, ideal para avaliação.</p>
+      <p class="preco">💰 + R$29,90</p>
+      <button onclick="selecionarOpcao('highlight', this)" class="btn-opcao">Selecionar</button>
+    </div>
+     </div>
+
+     <!-- PREMIUM -->
+     <div class="opcao">
+    <div class="opcao-header" onclick="toggleOpcao(this)">
+      🔴 Vídeo para redes sociais
+    </div>
+
+    <div class="opcao-content">
+      <p>Edição dinâmica com cortes e foco no atleta.</p>
+      <p class="preco">💰 + R$39,90</p>
+      <button onclick="selecionarOpcao('social', this)" class="btn-opcao">Selecionar</button>
+    </div>
+     </div>
+
+    <!-- COMBO -->
+    <div class="opcao">
+      <div class="opcao-header destaque" onclick="toggleOpcao(this)">
+     🔥 Highlight + Redes Sociais (Melhor custo-benefício)
+      </div>
+
+      <div class="opcao-content">
+     <p>Receba o vídeo completo para olheiros + versão otimizada para redes sociais.</p>
+     <p class="preco">💰 + R$49,90</p>
+     <button onclick="selecionarOpcao('combo', this)" class="btn-opcao">Selecionar</button>
+      </div>
+    </div>
+
+    </div>  
+    
   </div>
-
-  <!-- ALERTA -->
-  <div style="margin:10px;font-size:14px;text-align:center;">
-    ⚠️ <strong style="color:#2ecc71;">Você será redirecionado para o WhatsApp para finalizar seu pedido</strong><br>
-    💳 <strong>O link de pagamento já estará na mensagem</strong><br>
-    <span style="color:#e74c3c;">NÃO ALTERE NADA NA MENSAGEM</span><br>
-    <span style="text-align:center;font-size:12px;color:#aaa;margin-top:5px;">🔒 Seus dados estão seguros</span>
-  </div>
- 
-   <!-- ESCOLHA DO FORMATO -->
-   <div id="opcoes-edicao">
-
-	  <!-- BÁSICO -->
-	  <div class="opcao">
-		<div class="opcao-header" onclick="toggleOpcao(this)">
-		  🟢 Somente lances
-		</div>
-
-		<div class="opcao-content">
-		  <p>Receba apenas os lances selecionados, sem edição.</p>
-		  <p class="preco">💰 Incluso</p>
-		  <button onclick="selecionarOpcao('basico', this)" class="btn-opcao">Selecionar</button>
-		</div>
-	  </div>
-
-	  <!-- RECOMENDADO -->
-      <div class="opcao active">
-		<div class="opcao-header destaque" onclick="toggleOpcao(this)">
-		  🟡 Highlight para olheiros ⭐ (Recomendado)
-		</div>
-
-		<div class="opcao-content">
-		  <p>Organização profissional dos lances, ideal para avaliação.</p>
-		  <p class="preco">💰 + R$29,90</p>
-		  <button onclick="selecionarOpcao('highlight', this)" class="btn-opcao">Selecionar</button>
-		</div>
-	  </div>
-
-	  <!-- PREMIUM -->
-	  <div class="opcao">
-		<div class="opcao-header" onclick="toggleOpcao(this)">
-		  🔴 Vídeo para redes sociais
-		</div>
-
-		<div class="opcao-content">
-		  <p>Edição dinâmica com cortes e foco no atleta.</p>
-		  <p class="preco">💰 + R$39,90</p>
-		  <button onclick="selecionarOpcao('social', this)" class="btn-opcao">Selecionar</button>
-		</div>
-	  </div>
-
-		<!-- COMBO -->
-		<div class="opcao">
-		  <div class="opcao-header destaque" onclick="toggleOpcao(this)">
-			🔥 Highlight + Redes Sociais (Melhor custo-benefício)
-		  </div>
-
-		  <div class="opcao-content">
-			<p>Receba o vídeo completo para olheiros + versão otimizada para redes sociais.</p>
-			<p class="preco">💰 + R$49,90</p>
-			<button onclick="selecionarOpcao('combo', this)" class="btn-opcao">Selecionar</button>
-		  </div>
-		</div>
-
-	</div>  
 
   <!-- FOOTER FIXO -->
   <div id="confirmacao-footer">
@@ -1322,7 +1335,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   msg+=`💰 Lances: R$${valorLances.toFixed(2)}\n`;
   
   msg+=`\n🎬 Formato escolhido: ${nomeFormatado}\n`;
-  msg+=`💰 Edição: R$${adicional.toFixed(2)}\n`;
+  msg+=`💰 Edição: R$${adicional.toFixed(2)}\n\n`;
 
   //msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
