@@ -1215,6 +1215,7 @@ function pular(s){
 }
 
 function enviar(){
+
   if(lances.length === 0){
     mostrarAlerta("Adicione pelo menos 1 lance");
     return;
@@ -1240,16 +1241,39 @@ function enviar(){
     //`${lances.length} lance${lances.length != 1 ? 's' : ''} / ${tempoFormatado}`;
     `${lances.length} lance${lances.length != 1 ? 's' : ''}`;
 
-  atualizarTotalConfirmacao();
-
   // 🔥 PAUSA O VÍDEO ANTES DE TROCAR DE TELA
   player.pause().then(() => {
+
+    // 🔥 CALCULA TOTAL BASE (ANTES DE ESCOLHER FORMATO)
+    let totalBase = calcularTotalBase();
+
+    document.getElementById('total-confirmacao').innerText = `R$${totalBase.toFixed(2)}`;
+    document.getElementById('extra-edicao').innerText = "🎬 Selecione o formato do vídeo";
+
+    // 🔥 RESETA seleção
+    opcaoSelecionada = null;
+    document.querySelectorAll('.btn-opcao').forEach(btn=>{
+      btn.innerText = "Selecionar";
+    });
+
+    // 🔥 ABRE TELA
     document.getElementById('tela-confirmacao').style.display = 'flex';
     document.getElementById('footer').style.display = 'none';
+  });
+
+  opcaoSelecionada = null;
+
+  document.querySelectorAll('.btn-opcao').forEach(btn=>{
+    btn.innerText = "Selecionar";
   });
 }
 
 document.getElementById('btn-confirmar').addEventListener('click', ()=>{
+
+  if(!opcaoSelecionada){
+    mostrarAlerta("Selecione o formato do vídeo para continuar");
+    return;
+  }
 
   const qtd = lances.length;
   const linkPagamento = linksPagamento[qtd];
@@ -1259,18 +1283,19 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
     return;
   }
 
-	let adicional = 0;
+  let adicional = 0;
 
-	if(opcaoSelecionada === "highlight") adicional = 29.90;
-	if(opcaoSelecionada === "social") adicional = 39.90;
-	if(opcaoSelecionada === "combo") adicional = 49.90;
+  if(opcaoSelecionada === "highlight") adicional = 29.90;
+  if(opcaoSelecionada === "social") adicional = 39.90;
+  if(opcaoSelecionada === "combo") adicional = 49.90;
 
-	// depois soma adicional
-	let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
-	let total = totalBase + adicional;
+  // depois soma adicional
+  let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+  let total = totalBase + adicional;
+  let valorLances = totalBase;
 
-	let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
-	let descontoFinal = totalSem - totalBase;
+  let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
+  let descontoFinal = totalSem - totalBase;
 
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
   let tempoFormatado = formatTempoTotal(tempoTotal);
@@ -1279,7 +1304,7 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
 
   let msg="⚽ *Pedido Letto*\n\n";
-  msg+=`Edição de Highlights\n\n`;
+
   msg+=`🎥 Vídeo completo:\n${videoLink}\n\n`;
 
   lances.forEach((l,i)=>{
@@ -1292,13 +1317,14 @@ document.getElementById('btn-confirmar').addEventListener('click', ()=>{
   if(opcaoSelecionada === "social") nomeFormatado = "Vídeo para redes sociais";
   if(opcaoSelecionada === "combo") nomeFormatado = "Highlight + Redes sociais";
 
+  msg+=`\n🎬 ${lances.length} lance${lances.length !== 1 ? 's' : ''}\n`;
+  msg+=`⏱ Tempo total: ${tempoFormatado}\n`;
+  msg+=`💰 Lances: R$${valorLances.toFixed(2)}\n`;
+  
   msg+=`\n🎬 Formato escolhido: ${nomeFormatado}\n`;
   msg+=`💰 Edição: R$${adicional.toFixed(2)}\n`;
 
-  msg+=`\n🎬 ${lances.length} lances selecionados\n`;
-  msg+=`⏱ Tempo total: ${tempoFormatado}\n`;
-
-  msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
+  //msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
 
   // 🔥 ABRE O PAGAMENTO PRIMEIRO
@@ -1500,7 +1526,7 @@ player.on('seeked', () => {
   cancelarInicioPorInteracao();
 });
 
-let opcaoSelecionada = "highlight"; // padrão
+let opcaoSelecionada = null; // 👈 começa sem seleção
 
 function toggleOpcao(element){
   const opcao = element.parentElement;
@@ -1533,22 +1559,7 @@ function getAdicional(){
 }
 
 function atualizarTotalConfirmacao(){
-  let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
-  let adicional = getAdicional();
-  let totalFinal = totalBase + adicional;
-
-  let bonus = getBonus(lances.length);
-
-  if(bonus > 0){
-    document.getElementById('extra-edicao').innerText += 
-      ` | 🎁 ${bonus} lance${bonus>1?'s':''} grátis`;
-  }
-
-  document.getElementById('total-confirmacao').innerText = `R$${totalFinal.toFixed(2)}`;
-}
-
-function atualizarTotalConfirmacao(){
-  let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+  let totalBase = calcularTotalBase();
   let adicional = getAdicional();
   let totalFinal = totalBase + adicional;
 
@@ -1559,6 +1570,10 @@ function atualizarTotalConfirmacao(){
     : `🎬 Sem edição adicional`;
 
   document.getElementById('extra-edicao').innerText = texto;
+}
+
+function calcularTotalBase(){
+  return lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
 }
 
 // mantém acesso global se precisar chamar de qualquer lugar
