@@ -264,8 +264,21 @@ li{
   bottom:0;
   width:100%;
   background:#1e1e1e;
-  padding:10px;
-  border-top:1px solid #333;  
+
+  padding:8px 10px; /* 👈 menor */
+  border-top:1px solid #333;
+
+  display:flex;
+  flex-direction:column;
+  gap:6px; /* 👈 controla espaçamento */
+
+  z-index:10;
+}
+
+#confirmacao-footer button{
+  padding:10px; /* 👈 antes era 14px */
+  font-size:15px; /* 👈 levemente menor */
+  border-radius:8px;
 }
 
 #btn-confirmar{
@@ -670,9 +683,8 @@ li{
 
 <div id="tela-confirmacao">
 
-  
-  <div id="confirmacao-conteudo">
-
+  <div id="confirmacao-topo">
+    
     <!-- HEADER -->
     <h2>💰 Finalizar Pedido</h2>
 
@@ -689,15 +701,19 @@ li{
 
       <div id="extra-edicao" style="font-size:14px;color:#aaa;text-align:center;margin-top:5px;"></div>
 
-    </div>
+      </div>
 
-    <!-- ALERTA -->
-    <div style="margin:10px;font-size:14px;text-align:center;">
-      ⚠️ <strong style="color:#2ecc71;">Você será redirecionado para o WhatsApp</strong><br>
-      💳 <strong>O link de pagamento já estará na mensagem</strong><br>
-      <span style="color:#e74c3c;">NÃO ALTERE NADA NA MENSAGEM</span><br>
-    </div>
+      <!-- ALERTA -->
+      <div style="margin:10px;font-size:14px;text-align:center;">
+        ⚠️ <strong style="color:#2ecc71;">Você será redirecionado para o WhatsApp</strong><br>
+        💳 <strong>O link de pagamento já estará na mensagem</strong><br>
+        <span style="color:#e74c3c;">NÃO ALTERE NADA NA MENSAGEM</span><br>
+      </div>
+      
+  </div>
    
+  <div id="confirmacao-conteudo">
+  
      <!-- ESCOLHA DO FORMATO -->
      <div id="opcoes-edicao">
 
