@@ -631,10 +631,6 @@ li{
   pointer-events:none; /* não interfere no clique */
 }
 
-#input-cupom{
-  text-transform: uppercase;
-}
-
 .cupom-box{
   display:flex;
   gap:6px;
@@ -649,6 +645,23 @@ li{
   text-transform: uppercase;
 }
 
+#input-cupom,
+#btn-aplicar-cupom{
+  height: 40px; /* 👈 mesma altura para os dois */
+  box-sizing: border-box;
+}
+
+/* opcional: ajustar padding para ficar bonito */
+#input-cupom{
+  padding: 0 12px 0 38px; /* mantém espaço do ícone */
+}
+
+#btn-aplicar-cupom{
+  padding: 0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 #btn-aplicar-cupom{
   padding:10px;
   border:none;
@@ -809,7 +822,7 @@ li{
       Aplicar
     </button>
   </div>
-
+  
   <div id="cupom-feedback"></div>
 
      <!-- ESCOLHA DO FORMATO -->
@@ -873,8 +886,8 @@ li{
       </div>
     </div>
 
-    </div>  
-    
+    </div>     
+
   </div>
 
   <!-- FOOTER FIXO -->
