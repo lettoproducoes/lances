@@ -901,8 +901,8 @@ player.on('loaded', () => {
   carregouPagina = true;
 
   player.getVideoTitle().then(title => {
-  document.getElementById('videoTitle').innerText = title;
-});
+     document.getElementById('videoTitle').innerText = title;
+  });
 
   setTimeout(()=>{
     document.getElementById('videoTitle').style.opacity = "0";
@@ -1343,8 +1343,13 @@ document.getElementById("btn-confirmar").onclick = async function() {
 
   msg+=`🎥 Vídeo completo:\n${videoLink}\n\n`;
 
-  lances.forEach((l,i)=>{
-    msg+=`▶️ Lance ${i+1}: ${formatTime(l.inicio)}-${formatTime(l.fim)} (${Math.round(l.dur)}s)\n`;
+  let totalSeg = 0;
+
+  lances.forEach((l, i) => {
+    const dur = Math.round(l.dur); // mesmo valor exibido
+    totalSeg += dur;
+
+    msg += `▶️ Lance ${i+1}: ${formatTime(l.inicio)}-${formatTime(l.fim)} (${dur}s)\n`;
   });
 
   let nomeFormatado = "Lances sem edição";
@@ -1353,8 +1358,6 @@ document.getElementById("btn-confirmar").onclick = async function() {
   if(opcaoSelecionada === "social") nomeFormatado = "Vídeo para redes sociais";
   if(opcaoSelecionada === "combo") nomeFormatado = "Highlight + Redes sociais";
 
-  const totalSeg = Math.round(getTempoTotal());
-  
   msg+=`\n🎬 ${lances.length} lance${lances.length !== 1 ? 's' : ''}\n`;
   msg+=`⏱ Tempo total: ${totalSeg} Seg\n`;
   msg+=`💰 Lances: R$${valorLances.toFixed(2)}\n`;
