@@ -609,6 +609,24 @@ li{
   -webkit-overflow-scrolling: touch;
 }
 
+#videoTitle{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(2px);
+
+  padding:6px 10px;
+  font-size:13px;
+  color:#fff;
+  text-align:center;
+
+  z-index:10;
+  pointer-events:none; /* não interfere no clique */
+}
+
 </style>
 </head>
 
@@ -647,7 +665,7 @@ li{
 
 <div id="player-container">
   <iframe id="player" allow="autoplay; fullscreen"></iframe>
-
+  <div id="videoTitle">🎥 Nome do vídeo aqui</div>
   <div id="contadorHUD">⏱ 0.0s</div>
 </div>
 
@@ -882,6 +900,14 @@ const player = new Vimeo.Player('player');
 player.on('loaded', () => {
   carregouPagina = true;
 
+  player.getVideoTitle().then(title => {
+  document.getElementById('videoTitle').innerText = title;
+});
+
+  setTimeout(()=>{
+    document.getElementById('videoTitle').style.opacity = "0";
+  }, 10000);
+  
   const tempoSalvo = localStorage.getItem('tempoVideo_'+videoId);
 
   if(tempoSalvo){
@@ -1311,7 +1337,7 @@ document.getElementById("btn-confirmar").onclick = async function() {
   let tempoFormatado = formatTempoTotal(tempoTotal);
 
   // Monta mensagem (mantive seu padrão)
-  let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
+  let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}&titulo=Jogo%20Sub-17%20Final`;
 
   let msg="⚽ *Pedido Letto*\n\n";
 
@@ -1627,6 +1653,21 @@ function calcularTempoTotal(){
   // soma os durações de cada lance, arredondando para cima
   return lances.reduce((acc, l) => acc + Math.ceil(l.fim - l.inicio), 0);
 }
+
+function getTitulo(){
+  const params = new URLSearchParams(window.location.search);
+  const titulo = params.get('titulo');
+
+  if(titulo && titulo.trim() !== ""){
+    return decodeURIComponent(titulo);
+  }
+
+  return "🎥 Vídeo sem titulo";
+}
+
+setTimeout(()=>{
+  document.getElementById('videoTitle').style.opacity = "0";
+}, 10000);
 
 // mantém acesso global se precisar chamar de qualquer lugar
 window.mostrarAguarde = mostrarAguarde;
