@@ -607,6 +607,10 @@ li{
   padding-bottom:120px; /* espaço pro footer fixo */
 
   -webkit-overflow-scrolling: touch;
+  
+  display:flex;
+  flex-direction:column;
+  align-items:center; /* 👈 centraliza tudo dentro */  
 }
 
 #videoTitle{
@@ -625,6 +629,59 @@ li{
 
   z-index:10;
   pointer-events:none; /* não interfere no clique */
+}
+
+#input-cupom{
+  text-transform: uppercase;
+}
+
+.cupom-box{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  justify-content:center; /* 👈 centraliza horizontal */
+  max-width:400px;
+  margin:0 auto; /* 👈 centraliza o container */
+}
+
+#input-cupom{
+  flex:1;
+  text-transform: uppercase;
+}
+
+#btn-aplicar-cupom{
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#3498db;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+#btn-aplicar-cupom:disabled{
+  background:#555;
+  cursor:not-allowed;
+}
+
+#cupom-feedback{
+  margin:6px 10px 0;
+  font-size:13px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.cupom-ok{
+  color:#2ecc71;
+}
+
+.cupom-erro{
+  color:#e74c3c;
+}
+
+.input-group{
+  width:100%;
+  max-width:400px;
 }
 
 </style>
@@ -739,6 +796,22 @@ li{
    
   <div id="confirmacao-conteudo">
   
+  <div class="input-group cupom-box">
+    <span>🏷️</span>
+
+    <input 
+      type="text" 
+      id="input-cupom" 
+      placeholder="Código promocional"
+    >
+
+    <button id="btn-aplicar-cupom" onclick="aplicarCupom()">
+      Aplicar
+    </button>
+  </div>
+
+  <div id="cupom-feedback"></div>
+
      <!-- ESCOLHA DO FORMATO -->
      <div id="opcoes-edicao">
 
@@ -1327,7 +1400,21 @@ document.getElementById("btn-confirmar").onclick = async function() {
 
   // depois soma adicional
   let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
+
   let total = totalBase + adicional;
+
+  if(cupomAplicado){
+    if(cupomAplicado.tipo === "percentual"){
+      total = total * (1 - cupomAplicado.valor);
+    }
+
+    if(cupomAplicado.tipo === "fixo"){
+      total = total - cupomAplicado.valor;
+    }
+
+    if(total < 0) total = 0;
+  }
+
   let valorLances = totalBase;
 
   let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
@@ -1365,7 +1452,10 @@ document.getElementById("btn-confirmar").onclick = async function() {
   msg+=`\n🎬 Formato escolhido: ${nomeFormatado}\n`;
   msg+=`💰 Edição: R$${adicional.toFixed(2)}\n\n`;
 
-  //msg+=`\n🎯 Desconto: R$${descontoFinal.toFixed(2)}\n`;
+  if(cupomAplicado && cupomCodigo){
+    msg += `🎟️ Cupom aplicado: ${cupomCodigo}\n`;
+  }
+
   msg+=`💰 *TOTAL: R$${total.toFixed(2)}*\n`;
 
   // chama backend do Render para criar pagamento
@@ -1635,11 +1725,27 @@ function atualizarTotalConfirmacao(){
   let adicional = getAdicional();
   let totalFinal = totalBase + adicional;
 
+  if(cupomAplicado){
+    if(cupomAplicado.tipo === "percentual"){
+      totalFinal = totalFinal * (1 - cupomAplicado.valor);
+    }
+
+    if(cupomAplicado.tipo === "fixo"){
+      totalFinal = totalFinal - cupomAplicado.valor;
+    }
+
+    if(totalFinal < 0) totalFinal = 0;
+  }
+
   document.getElementById('total-confirmacao').innerText = `R$${totalFinal.toFixed(2)}`;
 
   let texto = adicional > 0 
     ? `🎬 Edição: + R$${adicional.toFixed(2)}`
     : `🎬 Sem edição adicional`;
+
+  if(cupomAplicado){
+    texto += " | 🏷️ Cupom aplicado";
+  }
 
   document.getElementById('extra-edicao').innerText = texto;
 }
@@ -1671,6 +1777,96 @@ function getTitulo(){
 setTimeout(()=>{
   document.getElementById('videoTitle').style.opacity = "0";
 }, 10000);
+
+const cupons = {
+  LETTO10: { tipo: "percentual", valor: 0.10 },
+  GALO50: { tipo: "percentual", valor: 0.50 },
+  VIP20: { tipo: "percentual", valor: 0.20 },
+  FIXO5: { tipo: "fixo", valor: 5.00 },
+  //FREE: { tipo: "percentual", valor: 1.00 }
+};
+
+let cupomAplicado = null;
+let cupomCodigo = null;
+
+function validarCupom(){
+  const input = document.getElementById("input-cupom");
+  const codigo = input.value.trim().toUpperCase();
+
+  if(cupons[codigo]){
+    cupomAplicado = cupons[codigo];
+    cupomCodigo = codigo; // 👈 salva o nome
+
+    input.classList.add("valido");
+    input.classList.remove("invalido");
+  } else {
+    cupomAplicado = null;
+    cupomCodigo = null;
+
+    input.classList.add("invalido");
+    input.classList.remove("valido");
+  }
+
+  atualizarTotalConfirmacao();
+}
+
+function aplicarCupom(){
+  const input = document.getElementById("input-cupom");
+  const feedback = document.getElementById("cupom-feedback");
+  const btn = document.getElementById("btn-aplicar-cupom");
+
+  const codigo = input.value.trim().toUpperCase();
+
+  // limpa classes
+  feedback.className = "";
+
+  if(!codigo){
+    feedback.innerText = "Digite um código";
+    feedback.classList.add("cupom-erro");
+    return;
+  }
+
+  if(cupons[codigo]){
+    cupomAplicado = cupons[codigo];
+    cupomCodigo = codigo;
+
+    feedback.innerHTML = `Cupom aplicado: ${codigo} ✅ <span style="cursor:pointer;text-decoration:underline;" onclick="removerCupom()">remover</span>`;
+    feedback.classList.add("cupom-ok");
+
+    input.disabled = true;
+    btn.disabled = true;
+    btn.innerText = "Aplicado";
+
+  } else {
+    cupomAplicado = null;
+    cupomCodigo = null;
+
+    feedback.innerText = "Cupom inválido ❌";
+    feedback.classList.add("cupom-erro");
+  }
+
+  atualizarTotalConfirmacao();
+}
+
+function removerCupom(){
+  const input = document.getElementById("input-cupom");
+  const feedback = document.getElementById("cupom-feedback");
+  const btn = document.getElementById("btn-aplicar-cupom");
+
+  cupomAplicado = null;
+  cupomCodigo = null;
+
+  input.disabled = false;
+  input.value = "";
+
+  btn.disabled = false;
+  btn.innerText = "Aplicar";
+
+  feedback.innerText = "Cupom removido";
+  feedback.className = "cupom-erro";
+
+  atualizarTotalConfirmacao();
+}
 
 // mantém acesso global se precisar chamar de qualquer lugar
 window.mostrarAguarde = mostrarAguarde;
