@@ -736,6 +736,16 @@ li{
   cursor:pointer; /* 👈 indica que é clicável */
 }
 
+@keyframes girar {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.girando {
+  display: inline-block; /* necessário para a rotação */
+  animation: girar 1s linear infinite; /* 1s por volta, contínuo */
+}
+
 </style>
 </head>
 
@@ -755,14 +765,8 @@ li{
   z-index:3000;
   flex-direction:column;
 ">
-  <div style="
-    background:#1e1e1e;
-    padding:20px 30px;
-    border-radius:12px;
-    text-align:center;
-    max-width:250px;
-  ">
-    ⏳ Aguarde, carregando...
+  <div style="background:#1e1e1e; padding:20px 30px; border-radius:12px; text-align:center; max-width:250px;">
+    <span class="girando">⏳</span> Aguarde, carregando...
   </div>
 </div>
 
