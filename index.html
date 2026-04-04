@@ -718,7 +718,9 @@ li{
   min-width:120px;
   
   cursor:pointer;
-  user-select:none;  
+  user-select:none; 
+  z-index:100;  
+  pointer-events:auto;
 }
 
 #hud-top{
@@ -734,6 +736,23 @@ li{
   font-size:11px;
   opacity:0.7;
   cursor:pointer; /* 👈 indica que é clicável */
+}
+
+#overlay-selecao{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:50;
+  cursor:crosshair;
+  z-index:50;
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.3); }
+  100% { transform: translate(-50%, -50%) scale(1); }
 }
 
 </style>
@@ -773,6 +792,7 @@ li{
 <div id="lado-esquerdo">
 
 <div id="player-container">
+  <div id="overlay-selecao"></div>
   <iframe id="player" allow="autoplay; fullscreen"></iframe>
   <div id="videoTitle">🎥 Nome do vídeo aqui</div>
   <div id="contadorHUD">⏱ 0.0s</div>
@@ -1016,6 +1036,7 @@ li{
 
 <script>
 let carregouPagina = false;
+let lanceSelecionadoIndex = null;
 
 function getVideoId(){
   const params = new URLSearchParams(window.location.search);
@@ -1023,21 +1044,28 @@ function getVideoId(){
 }
 
 const videoId = getVideoId();
-document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
+document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&muted=1`;
 
 const player = new Vimeo.Player('player');
 
-player.on('loaded', () => {
+player.on('loaded', async () => {
   carregouPagina = true;
 
+  try {
+    await player.setVolume(0);
+    await player.play();
+  } catch (e) {
+    console.log("Autoplay bloqueado:", e);
+  }
+
   player.getVideoTitle().then(title => {
-     document.getElementById('videoTitle').innerText = title;
+    document.getElementById('videoTitle').innerText = title;
   });
 
   setTimeout(()=>{
     document.getElementById('videoTitle').style.opacity = "0";
   }, 10000);
-  
+
   const tempoSalvo = localStorage.getItem('tempoVideo_'+videoId);
 
   if(tempoSalvo){
@@ -1048,11 +1076,10 @@ player.on('loaded', () => {
     });
   }
 
-  // Fecha modal de aguarde caso ainda esteja aberto
   fecharAguarde();
 
   setTimeout(()=>{
-    render(); // garante que lances já carregados sejam desenhados
+    render();
   }, 100); 
 });
 
@@ -1144,6 +1171,8 @@ player.on('timeupdate', d => {
 });
 
 timeline.onclick = e => {
+  pararScout();
+  
   cancelarInicioPorInteracao();
   
   const r = timeline.getBoundingClientRect();
@@ -1250,6 +1279,8 @@ function finalizar(fim){
   }
 
   lances.push(novo);
+  lanceSelecionadoIndex = lances.length - 1;
+  
   salvarTudo();
   lances.sort((a,b) => a.inicio - b.inicio);
   clearInterval(interval);
@@ -1287,14 +1318,18 @@ function render() {
     lances.forEach((l, i) => {
       let desc = calcDesc(i);
 
-	  let valor = getValorComDesconto(i);
+      let valor = getValorComDesconto(i);
 
-	  total += valor;
-	  totalSem += getPrecoBase(i);
+      total += valor;
+      totalSem += getPrecoBase(i);
 
       tempoTotal += l.dur;
 
       let li = document.createElement("li");
+
+      if(i === lanceSelecionadoIndex){
+        li.style.border = "1px solid #2ecc71";
+      }
 
       li.innerHTML = `
         <div class="info">
@@ -1368,10 +1403,13 @@ function render() {
 }
 
 function toggle(){
+  pararScout();
   player.getPaused().then(p=>p?player.play():player.pause());
 }
 
 function pular(s){
+  pararScout();
+  
   cancelarInicioPorInteracao();
   
   mostrarAguarde();
@@ -1565,6 +1603,8 @@ document.addEventListener("touchmove", drag);
 
 function drag(e){
   if(!arrastando) return;
+  
+  pararScout();
 
   cancelarInicioPorInteracao();
   
@@ -1934,6 +1974,25 @@ function iniciarScout(i){
   player.setPlaybackRate(1);
 
   const l = lances[i];
+  lanceSelecionadoIndex = i;
+  
+  // 🔥 MOSTRAR PONTO DO JOGADOR
+  if(l.playerPos){
+    desenharPonto(l.playerPos.x, l.playerPos.y);
+
+    setTimeout(() => {
+      player.pause().then(() => {  
+        player.setCurrentTime(l.inicio).then(() => {
+          piscarPonto().then(() => {
+            iniciarPlayScout(l, i);
+          });
+        });
+      });
+    }, 50);
+
+    return; // 👈 AQUI (fora do setTimeout)
+  }
+  
   const hud = document.getElementById("lanceHUD");
 
   // reset
@@ -1978,6 +2037,87 @@ function iniciarScout(i){
 
       });
     }, 100);
+  });
+}
+
+function iniciarPlayScout(l, i){
+  const hud = document.getElementById("lanceHUD");
+
+  if(modoScout.interval) clearInterval(modoScout.interval);
+
+  modoScout.ativo = true;
+  modoScout.index = i;
+
+  player.setPlaybackRate(1);
+
+  player.setCurrentTime(l.inicio).then(() => {
+    player.play();
+
+    hud.style.display = "block";
+
+    modoScout.interval = setInterval(() => {
+      player.getCurrentTime().then(t => {
+
+        let tempo = Math.max(0, t - l.inicio);
+
+        document.getElementById("hud-top").innerText = `▶️ Lance ${i+1}`;
+        document.getElementById("hud-middle").innerText = `⏱ ${Math.floor(tempo)}s / ${Math.floor(l.dur)}s`;
+
+        document.getElementById("hud-bottom").innerText =
+          modoScout.slow ? "🐢 SLOW (toque)" :
+          modoScout.loop ? "🔁 LOOP (toque)" :
+          "🎮 NORMAL (toque)";
+
+        if(t >= l.fim - 0.1){
+          if(modoScout.loop){
+            player.setCurrentTime(l.inicio);
+            return;
+          }
+
+          clearInterval(modoScout.interval);
+          player.pause();
+          hud.style.display = "none";
+          modoScout.ativo = false;
+        }
+
+      });
+    }, 100);
+  });
+}
+
+function piscarPonto(){
+  return new Promise(resolve => {
+
+    let tentativas = 0;
+
+    function tentar(){
+      const dot = document.querySelector(".player-dot");
+
+      if(!dot){
+        tentativas++;
+        if(tentativas > 10){
+          return resolve(); // desiste com segurança
+        }
+        return setTimeout(tentar, 50);
+      }
+
+      let vezes = 0;
+
+      const interval = setInterval(() => {
+        dot.style.opacity = (dot.style.opacity === "0" ? "1" : "0");
+
+        vezes++;
+
+        if(vezes >= 6){
+          clearInterval(interval);
+          dot.style.opacity = "1";
+          resolve();
+        }
+
+      }, 150);
+    }
+
+    tentar();
   });
 }
 
@@ -2044,6 +2184,114 @@ hud.addEventListener("click", () => {
     player.setPlaybackRate(1);
   }
 });
+
+function pararScout(){
+  if(!modoScout.ativo) return;
+
+  // desliga estado
+  modoScout.ativo = false;
+  modoScout.loop = false;
+  modoScout.slow = false;
+
+  // limpa intervalo
+  if(modoScout.interval){
+    clearInterval(modoScout.interval);
+    modoScout.interval = null;
+  }
+
+  // volta player ao normal
+  player.setPlaybackRate(1);
+
+  // esconde HUD
+  const hud = document.getElementById("lanceHUD");
+  if(hud) hud.style.display = "none";
+}
+
+const overlay = document.getElementById("overlay-selecao");
+
+function salvarPosicaoJogador(x, y){
+  if(lanceSelecionadoIndex === null) return;
+
+  let lance = lances[lanceSelecionadoIndex];
+
+  lance.playerPos = { x, y };
+
+  salvarTudo();
+}
+
+let ultimo = lances[lances.length - 1];
+
+if(ultimo){
+  ultimo.zoom = {
+    x: 0.62,
+    y: 0.38,
+    scale: 1.8
+  };
+}
+
+overlay.addEventListener("click", (e) => {
+
+  const rect = overlay.getBoundingClientRect();
+
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+
+  // remove pontos antigos
+  overlay.querySelectorAll(".player-dot").forEach(d => d.remove());
+
+  // cria ponto
+  let dot = document.createElement("div");
+  dot.classList.add("player-dot");
+
+  dot.style.position = "absolute";
+  dot.style.width = "10px";
+  dot.style.height = "10px";
+  dot.style.background = "red";
+  dot.style.borderRadius = "50%";
+  dot.style.left = (x * 100) + "%";
+  dot.style.top = (y * 100) + "%";
+  dot.style.transform = "translate(-50%, -50%)";
+
+  overlay.appendChild(dot);
+
+  salvarPosicaoJogador(x, y);
+
+  // animação aqui dentro (CORRETO)
+  dot.style.transition = "transform 0.1s ease";
+  dot.style.transform = "translate(-50%, -50%) scale(1.2)";
+  setTimeout(() => {
+    dot.style.transform = "translate(-50%, -50%) scale(1)";
+  }, 100);
+});
+
+function desenharPonto(x, y){
+  // remove antigo
+  overlay.querySelectorAll(".player-dot").forEach(d => d.remove());
+
+  // cria novo
+  let dot = document.createElement("div");
+  dot.classList.add("player-dot");
+
+  dot.style.position = "absolute";
+  dot.style.width = "12px";
+  dot.style.height = "12px";
+  dot.style.background = "#ff3b30";
+  dot.style.border = "2px solid #fff";
+  dot.style.borderRadius = "50%";
+  dot.style.left = (x * 100) + "%";
+  dot.style.top = (y * 100) + "%";
+  dot.style.transform = "translate(-50%, -50%)";
+  dot.style.zIndex = "200";
+
+  overlay.appendChild(dot);
+  
+dot.style.transition = "transform 0.1s ease";
+dot.style.transform = "translate(-50%, -50%) scale(1.2)";
+setTimeout(() => {
+  dot.style.transform = "translate(-50%, -50%) scale(1)";
+}, 100);
+  
+}
 
 </script>
 </body>
