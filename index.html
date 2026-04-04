@@ -697,6 +697,45 @@ li{
   max-width:400px;
 }
 
+#lanceHUD{
+  position:absolute;
+  bottom:10px;
+  left:10px;
+
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(4px);
+
+  padding:8px 12px;
+  border-radius:10px;
+
+  font-size:13px;
+  color:#fff;
+
+  display:none;
+  z-index:20;
+
+  border:1px solid rgba(255,255,255,0.08);
+  min-width:120px;
+  
+  cursor:pointer;
+  user-select:none;  
+}
+
+#hud-top{
+  font-weight:bold;
+}
+
+#hud-middle{
+  font-size:12px;
+  opacity:0.9;
+}
+
+#hud-bottom{
+  font-size:11px;
+  opacity:0.7;
+  cursor:pointer; /* 👈 indica que é clicável */
+}
+
 </style>
 </head>
 
@@ -737,6 +776,11 @@ li{
   <iframe id="player" allow="autoplay; fullscreen"></iframe>
   <div id="videoTitle">🎥 Nome do vídeo aqui</div>
   <div id="contadorHUD">⏱ 0.0s</div>
+  <div id="lanceHUD">
+    <div id="hud-top">▶️ Lance 1</div>
+    <div id="hud-middle">⏱ 0s / 0s</div>
+    <div id="hud-bottom">🎮 NORMAL</div>
+  </div>
 </div>
 
 <div id="timeline">
@@ -1263,14 +1307,8 @@ function render() {
       v.className = "ver";
       v.innerText = "▶️ Ver";
 
-      v.onclick = () => {
-        player.setCurrentTime(l.inicio).then(() => {
-       player.play(); // inicia automaticamente
-        });
-        document.querySelectorAll("li").forEach(x => x.classList.remove("ativo"));
-        li.classList.add("ativo");
-      };
-
+      v.onclick = () => iniciarScout(i);
+      
       let r = document.createElement("button");
       r.className = "remover";
       r.innerText = "🗑️ Remover";
@@ -1881,9 +1919,131 @@ function removerCupom(){
   atualizarTotalConfirmacao();
 }
 
+let modoScout = {
+  ativo: false,
+  index: null,
+  loop: false,
+  slow: false,
+  interval: null
+};
+
+function iniciarScout(i){
+
+  modoScout.slow = false;
+  modoScout.loop = false;
+  player.setPlaybackRate(1);
+
+  const l = lances[i];
+  const hud = document.getElementById("lanceHUD");
+
+  // reset
+  if(modoScout.interval) clearInterval(modoScout.interval);
+
+  modoScout.ativo = true;
+  modoScout.index = i;
+
+  player.setPlaybackRate(1);
+
+  player.setCurrentTime(l.inicio).then(() => {
+    player.play();
+
+    hud.style.display = "block";
+
+    modoScout.interval = setInterval(() => {
+      player.getCurrentTime().then(t => {
+
+        let tempo = Math.max(0, t - l.inicio);
+
+        document.getElementById("hud-top").innerText = `▶️ Lance ${i+1}`;
+        document.getElementById("hud-middle").innerText = `⏱ ${Math.floor(tempo)}s / ${Math.floor(l.dur)}s`;
+
+        document.getElementById("hud-bottom").innerText =
+          modoScout.slow ? "🐢 SLOW (toque)" :
+          modoScout.loop ? "🔁 LOOP (toque)" :
+          "🎮 NORMAL (toque)";
+  
+        // fim do lance
+        if(t >= l.fim - 0.1){
+
+          if(modoScout.loop){
+            player.setCurrentTime(l.inicio);
+            return;
+          }
+
+          clearInterval(modoScout.interval);
+          player.pause();
+          hud.style.display = "none";
+          modoScout.ativo = false;
+        }
+
+      });
+    }, 100);
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+
+  if(!modoScout.ativo) return;
+
+  // ⏭ Próximo lance
+  if(e.key === "ArrowRight"){
+    let next = Math.min(lances.length - 1, modoScout.index + 1);
+    iniciarScout(next);
+  }
+
+  // ⏮ Lance anterior
+  if(e.key === "ArrowLeft"){
+    let prev = Math.max(0, modoScout.index - 1);
+    iniciarScout(prev);
+  }
+
+  // 🔁 Loop
+  if(e.key.toLowerCase() === "r"){
+    modoScout.loop = !modoScout.loop;
+  }
+
+  // 🐢 Slow motion
+  if(e.key.toLowerCase() === "s"){
+    modoScout.slow = !modoScout.slow;
+    player.setPlaybackRate(modoScout.slow ? 0.5 : 1);
+  }
+
+  // ⏸ Play/Pause
+  if(e.key === " "){
+    e.preventDefault();
+    toggle();
+  }
+
+});
+
 // mantém acesso global se precisar chamar de qualquer lugar
 window.mostrarAguarde = mostrarAguarde;
 window.fecharAguarde = fecharAguarde;
+
+const hud = document.getElementById("lanceHUD");
+
+hud.addEventListener("click", () => {
+
+  if(!modoScout.ativo) return;
+
+  // ciclo de modos
+  if(!modoScout.slow && !modoScout.loop){
+    // NORMAL → SLOW
+    modoScout.slow = true;
+    player.setPlaybackRate(0.5);
+
+  } else if(modoScout.slow){
+    // SLOW → LOOP
+    modoScout.slow = false;
+    modoScout.loop = true;
+    player.setPlaybackRate(1);
+
+  } else {
+    // LOOP → NORMAL
+    modoScout.loop = false;
+    player.setPlaybackRate(1);
+  }
+});
 
 </script>
 </body>
