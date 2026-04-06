@@ -899,7 +899,7 @@ li{
      <div class="opcao-content">
        <p>Vídeo organizado e profissional, no padrão usado por olheiros.</p>
        <p>👉 Destaque claro das jogadas para facilitar avaliação.</p>
-       <p class="preco">💰 + R$29,90</p>
+       <p class="preco">💰 + R$49,90</p>
        <button onclick="selecionarOpcao('highlight', this)" class="btn-opcao">Selecionar</button>
      </div>
      </div>
@@ -913,7 +913,7 @@ li{
      <div class="opcao-content">
        <p>Edição dinâmica com cortes rápidos e foco total no atleta.</p>
        <p>👉 Perfeito para Instagram, TikTok e chamar atenção.</p>
-       <p class="preco">💰 + R$39,90</p>
+       <p class="preco">💰 + R$59,90</p>
 
        <button onclick="selecionarOpcao('social', this)" class="btn-opcao">Selecionar</button>
      </div>
@@ -928,7 +928,7 @@ li{
       <div class="opcao-content">
      <p>Receba versão olheiros + versão redes sociais.</p>
      <p>👉 Melhor opção pra quem quer visibilidade + avaliação.</p>
-     <p class="preco">💰 + R$49,90</p>
+     <p class="preco">💰 + R$69,90</p>
      
      <button onclick="selecionarOpcao('combo', this)" class="btn-opcao">Selecionar</button>
       </div>
@@ -1073,7 +1073,7 @@ let ultimoSalvamento = 0;
 
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
 
-const preco = 0.99;
+const preco = 9.99;
 
 // CALCULA TEMPO TOTAL DOS LANCES
 function getTempoTotal() {
@@ -1081,7 +1081,7 @@ function getTempoTotal() {
 }
 
 function getPrecoBase(i){
-  return i < 20 ? preco : 11;
+  return i < 20 ? preco : 9.99;
 }
 
 function getValorComDesconto(i){
@@ -1449,9 +1449,9 @@ document.getElementById("btn-confirmar").onclick = async function() {
 
   let adicional = 0;
 
-  if(opcaoSelecionada === "highlight") adicional = 29.90;
-  if(opcaoSelecionada === "social") adicional = 39.90;
-  if(opcaoSelecionada === "combo") adicional = 49.90;
+  if(opcaoSelecionada === "highlight") adicional = 49.90;
+  if(opcaoSelecionada === "social") adicional = 59.90;
+  if(opcaoSelecionada === "combo") adicional = 69.90;
 
   // depois soma adicional
   let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
@@ -1835,7 +1835,7 @@ setTimeout(()=>{
 
 const cupons = {
   LETTO10: { tipo: "percentual", valor: 0.10 },
-  GALO50: { tipo: "percentual", valor: 0.50 },
+  GALO90: { tipo: "percentual", valor: 0.90 },
   VIP20: { tipo: "percentual", valor: 0.20 },
   FIXO5: { tipo: "fixo", valor: 5.00 },
   //FREE: { tipo: "percentual", valor: 1.00 }
