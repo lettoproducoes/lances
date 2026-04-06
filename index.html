@@ -749,7 +749,7 @@ li{
 .preco-original{
   text-decoration: line-through;
   color:#aaa;
-  font-size:13px;
+  font-size:18px;
   margin-right:6px;
 }
 
@@ -757,6 +757,13 @@ li{
   color:#2ecc71;
   font-weight:bold;
   font-size:36px;
+}
+
+.linha-preco{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
 }
 
 </style>
@@ -1819,10 +1826,12 @@ function atualizarTotalConfirmacao(){
   let html = "";
 
   if(totalFinal < totalSem){
-    html = `
-      <div class="preco-original">R$${totalSem.toFixed(2)}</div>
-      <div class="preco-final">R$${totalFinal.toFixed(2)}</div>
-    `;
+   html = `
+     <div class="linha-preco">
+       <span class="preco-original">R$${totalSem.toFixed(2)}</span>
+       <span class="preco-final">R$${totalFinal.toFixed(2)}</span>
+     </div>
+   `;
   } else {
     html = `R$${totalFinal.toFixed(2)}`;
   }
