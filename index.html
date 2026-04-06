@@ -746,6 +746,19 @@ li{
   animation: girar 1s linear infinite; /* 1s por volta, contínuo */
 }
 
+.preco-original{
+  text-decoration: line-through;
+  color:#aaa;
+  font-size:13px;
+  margin-right:6px;
+}
+
+.preco-final{
+  color:#2ecc71;
+  font-weight:bold;
+  font-size:36px;
+}
+
 </style>
 </head>
 
@@ -899,7 +912,7 @@ li{
      <div class="opcao-content">
        <p>Vídeo organizado e profissional, no padrão usado por olheiros.</p>
        <p>👉 Destaque claro das jogadas para facilitar avaliação.</p>
-       <p class="preco">💰 + R$49,90</p>
+       <p class="preco">💰 + R$39,90</p>
        <button onclick="selecionarOpcao('highlight', this)" class="btn-opcao">Selecionar</button>
      </div>
      </div>
@@ -913,7 +926,7 @@ li{
      <div class="opcao-content">
        <p>Edição dinâmica com cortes rápidos e foco total no atleta.</p>
        <p>👉 Perfeito para Instagram, TikTok e chamar atenção.</p>
-       <p class="preco">💰 + R$59,90</p>
+       <p class="preco">💰 + R$49,90</p>
 
        <button onclick="selecionarOpcao('social', this)" class="btn-opcao">Selecionar</button>
      </div>
@@ -928,7 +941,7 @@ li{
       <div class="opcao-content">
      <p>Receba versão olheiros + versão redes sociais.</p>
      <p>👉 Melhor opção pra quem quer visibilidade + avaliação.</p>
-     <p class="preco">💰 + R$69,90</p>
+     <p class="preco">💰 + R$59,90</p>
      
      <button onclick="selecionarOpcao('combo', this)" class="btn-opcao">Selecionar</button>
       </div>
@@ -1364,7 +1377,20 @@ function render() {
     //    : "";
 
     let economia = totalSem - total;
-    document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} lance${lances.length !== 1 ? 's' : ''})`;
+    let totalHTML = "";
+
+    if(total < totalSem){
+      totalHTML = `
+        <span class="preco-original">R$${totalSem.toFixed(2)}</span>
+        <span class="preco-final">R$${total.toFixed(2)}</span>
+        (${lances.length} lance${lances.length !== 1 ? 's' : ''})
+      `;
+    } else {
+      totalHTML = `R$${total.toFixed(2)} (${lances.length} lance${lances.length !== 1 ? 's' : ''})`;
+    }
+
+    document.getElementById("total").innerHTML = totalHTML;
+
     //document.getElementById("total").innerText = `R$${total.toFixed(2)} (${lances.length} Lan / ${tempoFormatado})`;
     //document.getElementById("economia").innerText = economia > 0 ? `💰 Economizou R$${economia.toFixed(2)}` : "";
     document.getElementById("economia").innerText = "";
@@ -1788,7 +1814,20 @@ function atualizarTotalConfirmacao(){
     if(totalFinal < 0) totalFinal = 0;
   }
 
-  document.getElementById('total-confirmacao').innerText = `R$${totalFinal.toFixed(2)}`;
+  let totalSem = lances.reduce((acc,l,i)=>acc + getPrecoBase(i),0);
+
+  let html = "";
+
+  if(totalFinal < totalSem){
+    html = `
+      <div class="preco-original">R$${totalSem.toFixed(2)}</div>
+      <div class="preco-final">R$${totalFinal.toFixed(2)}</div>
+    `;
+  } else {
+    html = `R$${totalFinal.toFixed(2)}`;
+  }
+
+  document.getElementById('total-confirmacao').innerHTML = html;
 
   let texto = adicional > 0 
     ? `🎬 Edição: + R$${adicional.toFixed(2)}`
