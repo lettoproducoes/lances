@@ -1447,11 +1447,7 @@ document.getElementById("btn-confirmar").onclick = async function() {
 
   const qtd = lances.length;
 
-  let adicional = 0;
-
-  if(opcaoSelecionada === "highlight") adicional = 49.90;
-  if(opcaoSelecionada === "social") adicional = 59.90;
-  if(opcaoSelecionada === "combo") adicional = 69.90;
+  let adicional = getAdicional();
 
   // depois soma adicional
   let totalBase = lances.reduce((acc,l,i)=>acc + getValorComDesconto(i),0);
@@ -1769,9 +1765,9 @@ function selecionarOpcao(tipo, el){
 }
 
 function getAdicional(){
-  if(opcaoSelecionada === "highlight") return 29.90;
-  if(opcaoSelecionada === "social") return 39.90;
-  if(opcaoSelecionada === "combo") return 49.90;
+  if(opcaoSelecionada === "highlight") return 49.90;
+  if(opcaoSelecionada === "social") return 59.90;
+  if(opcaoSelecionada === "combo") return 69.90;
   return 0;
 }
 
