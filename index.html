@@ -1149,7 +1149,7 @@ function iniciarMarcacaoAtleta(index, posicionarNoLance = false){
     player.setCurrentTime(lance.inicio + (lance.dur / 2));
   }
 
-  mostrarAlerta("Para evitar erros na marcação, de ZOOM e clique no atleta que deverá ser destacado.");
+  mostrarAlerta("Para evitar erros na marcação, dê ZOOM e clique no atleta que deverá ser destacado.");
 }
 
 function iniciarMarcacaoNovoLance(){
@@ -1157,7 +1157,7 @@ function iniciarMarcacaoNovoLance(){
   areaMarcacaoAtleta.style.display = 'block';
   mostrarMarcador(null);
   player.pause();
-  mostrarAlerta("Para evitar erros na marcação, de ZOOM e clique no atleta que deverá ser destacado.");
+  mostrarAlerta("Para evitar erros na marcação, dê ZOOM e clique no atleta que deverá ser destacado.");
 }
 
 areaMarcacaoAtleta.addEventListener('pointerdown', e => {
@@ -1206,7 +1206,7 @@ function validarMarcacaoAtletas(){
 
 function marcacaoPendente(){
   if(!marcacaoAtleta.ativo) return false;
-  mostrarAlerta("Para evitar erros na marcação, de ZOOM e clique no atleta que deverá ser destacado.");
+  mostrarAlerta("Para evitar erros na marcação, dê ZOOM e clique no atleta que deverá ser destacado.");
   return true;
 }
 
