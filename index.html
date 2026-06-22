@@ -1116,12 +1116,16 @@ let ultimoSalvamento = 0;
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
 let marcacaoAtleta = { ativo:false, index:null, aoConcluir:null };
 let atletaPendenteInicio = null;
+let timerMarcadorAtleta = null;
 
 const playerContainer = document.getElementById('player-container');
 const areaMarcacaoAtleta = document.getElementById('area-marcacao-atleta');
 const marcadorAtleta = document.getElementById('marcador-atleta');
 
 function mostrarMarcador(atleta){
+  clearTimeout(timerMarcadorAtleta);
+  timerMarcadorAtleta = null;
+
   if(!atleta){
     marcadorAtleta.style.display = 'none';
     return;
@@ -1238,7 +1242,13 @@ if(dadosSalvos){
 
 player.on('play', () => {
   btn.innerText = "⏸️";
-  mostrarMarcador(null);
+  if(marcadorAtleta.style.display === 'block'){
+    clearTimeout(timerMarcadorAtleta);
+    timerMarcadorAtleta = setTimeout(() => {
+      marcadorAtleta.style.display = 'none';
+      timerMarcadorAtleta = null;
+    }, 1000);
+  }
   fecharAguarde(); // <<< adiciona aqui
 });
 player.on('pause',()=>btn.innerText="▶️");
