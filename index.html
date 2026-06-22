@@ -1114,7 +1114,8 @@ contadorLance.style.display = "none";
 let ultimoSalvamento = 0;
 
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
-let marcacaoAtleta = { ativo:false, index:null };
+let marcacaoAtleta = { ativo:false, index:null, aoConcluir:null };
+let atletaPendenteInicio = null;
 
 const playerContainer = document.getElementById('player-container');
 const areaMarcacaoAtleta = document.getElementById('area-marcacao-atleta');
@@ -1135,7 +1136,7 @@ function iniciarMarcacaoAtleta(index, posicionarNoLance = false){
   const lance = lances[index];
   if(!lance) return;
 
-  marcacaoAtleta = { ativo:true, index };
+  marcacaoAtleta = { ativo:true, index, aoConcluir:null };
   areaMarcacaoAtleta.style.display = 'block';
   mostrarMarcador(null);
   player.pause();
@@ -1144,7 +1145,15 @@ function iniciarMarcacaoAtleta(index, posicionarNoLance = false){
     player.setCurrentTime(lance.inicio + (lance.dur / 2));
   }
 
-  mostrarAlerta("Para evitar erros de marcação, clique no atleta deste lance.");
+  mostrarAlerta("Para evitar erros na edição do lance, clique no atleta que deverá ser destacado.");
+}
+
+function iniciarMarcacaoNovoLance(){
+  marcacaoAtleta = { ativo:true, index:null, aoConcluir:iniciarGravacaoLance };
+  areaMarcacaoAtleta.style.display = 'block';
+  mostrarMarcador(null);
+  player.pause();
+  mostrarAlerta("Para evitar erros na edição do lance, clique no atleta que deverá ser destacado.");
 }
 
 areaMarcacaoAtleta.addEventListener('pointerdown', e => {
@@ -1155,16 +1164,21 @@ areaMarcacaoAtleta.addEventListener('pointerdown', e => {
   const xPercent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
   const yPercent = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
   const index = marcacaoAtleta.index;
+  const aoConcluir = marcacaoAtleta.aoConcluir;
+  const atleta = { xPercent, yPercent };
 
   if(lances[index]){
-    lances[index].atleta = { xPercent, yPercent };
+    lances[index].atleta = atleta;
     salvarTudo();
+  } else if(aoConcluir){
+    atletaPendenteInicio = atleta;
   }
 
-  marcacaoAtleta = { ativo:false, index:null };
+  marcacaoAtleta = { ativo:false, index:null, aoConcluir:null };
   areaMarcacaoAtleta.style.display = 'none';
-  mostrarMarcador({ xPercent, yPercent });
+  mostrarMarcador(atleta);
   render();
+  if(aoConcluir) aoConcluir();
 });
 
 function desmarcarAtleta(index){
@@ -1188,7 +1202,7 @@ function validarMarcacaoAtletas(){
 
 function marcacaoPendente(){
   if(!marcacaoAtleta.ativo) return false;
-  mostrarAlerta("Para evitar erros de marcação, clique no atleta deste lance.");
+  mostrarAlerta("Para evitar erros na edição do lance, clique no atleta que deverá ser destacado.");
   return true;
 }
 
@@ -1224,6 +1238,7 @@ if(dadosSalvos){
 
 player.on('play', () => {
   btn.innerText = "⏸️";
+  mostrarMarcador(null);
   fecharAguarde(); // <<< adiciona aqui
 });
 player.on('pause',()=>btn.innerText="▶️");
@@ -1284,6 +1299,7 @@ timeline.onclick = e => {
 function reset(){
   document.querySelector('.inicio').innerText = "🟢 Marcar Início";
   inicio=null;
+  atletaPendenteInicio=null;
   clearInterval(interval);
   
   contadorLance.style.display = "none"; // 👈 ESCONDE
@@ -1294,6 +1310,10 @@ function reset(){
 
 function inicioLance(){
   if(marcacaoPendente()) return;
+  iniciarMarcacaoNovoLance();
+}
+
+function iniciarGravacaoLance(){
   document.querySelector('.inicio').innerText = "🔴 Gravando...";
 
   contadorHUD.style.display = "block";
@@ -1356,7 +1376,7 @@ function finalizar(fim){
     return;
   }
   
-  let novo = {inicio, fim, dur};
+  let novo = {inicio, fim, dur, atleta: atletaPendenteInicio};
 
   // Verifica sobreposição
   let sobreposto = lances.findIndex(l => novo.inicio < l.fim && novo.fim > l.inicio);
@@ -1377,12 +1397,10 @@ function finalizar(fim){
 
   lances.push(novo);
   lances.sort((a,b) => a.inicio - b.inicio);
-  const indexNovoLance = lances.indexOf(novo);
   salvarTudo();
   clearInterval(interval);
   reset();
   render();
-  player.pause().then(() => iniciarMarcacaoAtleta(indexNovoLance));
 }
 
 function calcDesc(i){
