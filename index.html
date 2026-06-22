@@ -150,6 +150,8 @@ li{
 
 .ver{background:#333;}
 .remover{background:#e53935;}
+.desmarcar-atleta{background:#b71c1c; flex:1; font-size:11px; padding:4px; border-radius:6px;}
+.status-atleta{display:block; margin-top:5px; color:#f1c40f; font-size:12px;}
 
 #total{
   font-size:16px;
@@ -445,6 +447,24 @@ li{
   position: relative;
   width: 100%;
   height: 220px;
+}
+
+#marcador-atleta{
+  position:absolute;
+  z-index:12;
+  pointer-events:none;
+  font-size:24px;
+  transform:translate(-50%, -50%);
+  display:none;
+}
+
+#area-marcacao-atleta{
+  position:absolute;
+  inset:0;
+  z-index:11;
+  display:none;
+  cursor:crosshair;
+  touch-action:none;
 }
 
 #player{
@@ -798,6 +818,8 @@ li{
 
 <div id="player-container">
   <iframe id="player" allow="autoplay; fullscreen"></iframe>
+  <div id="area-marcacao-atleta"></div>
+  <div id="marcador-atleta">🎯</div>
   <div id="videoTitle">🎥 Nome do vídeo aqui</div>
   <div id="contadorHUD">⏱ 0.0s</div>
   <div id="lanceHUD">
@@ -1092,6 +1114,83 @@ contadorLance.style.display = "none";
 let ultimoSalvamento = 0;
 
 let inicio = null, lances = [], ultimoTempo = 0, interval = null;
+let marcacaoAtleta = { ativo:false, index:null };
+
+const playerContainer = document.getElementById('player-container');
+const areaMarcacaoAtleta = document.getElementById('area-marcacao-atleta');
+const marcadorAtleta = document.getElementById('marcador-atleta');
+
+function mostrarMarcador(atleta){
+  if(!atleta){
+    marcadorAtleta.style.display = 'none';
+    return;
+  }
+
+  marcadorAtleta.style.left = atleta.xPercent + '%';
+  marcadorAtleta.style.top = atleta.yPercent + '%';
+  marcadorAtleta.style.display = 'block';
+}
+
+function iniciarMarcacaoAtleta(index, posicionarNoLance = false){
+  const lance = lances[index];
+  if(!lance) return;
+
+  marcacaoAtleta = { ativo:true, index };
+  areaMarcacaoAtleta.style.display = 'block';
+  mostrarMarcador(null);
+  player.pause();
+
+  if(posicionarNoLance){
+    player.setCurrentTime(lance.inicio + (lance.dur / 2));
+  }
+
+  mostrarAlerta("Para evitar erros de marcação, clique no atleta deste lance.");
+}
+
+areaMarcacaoAtleta.addEventListener('pointerdown', e => {
+  if(!marcacaoAtleta.ativo) return;
+
+  e.preventDefault();
+  const rect = playerContainer.getBoundingClientRect();
+  const xPercent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+  const yPercent = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+  const index = marcacaoAtleta.index;
+
+  if(lances[index]){
+    lances[index].atleta = { xPercent, yPercent };
+    salvarTudo();
+  }
+
+  marcacaoAtleta = { ativo:false, index:null };
+  areaMarcacaoAtleta.style.display = 'none';
+  mostrarMarcador({ xPercent, yPercent });
+  render();
+});
+
+function desmarcarAtleta(index){
+  if(!lances[index]) return;
+  delete lances[index].atleta;
+  salvarTudo();
+  render();
+  iniciarMarcacaoAtleta(index, true);
+}
+
+function validarMarcacaoAtletas(){
+  const index = lances.findIndex(l => !l.atleta);
+  if(index === -1) return true;
+
+  document.getElementById('tela-confirmacao').style.display = 'none';
+  document.getElementById('footer').style.display = 'flex';
+  iniciarMarcacaoAtleta(index, true);
+  mostrarAlerta("Existe lance sem atleta marcado. Clique no atleta para continuar.");
+  return false;
+}
+
+function marcacaoPendente(){
+  if(!marcacaoAtleta.ativo) return false;
+  mostrarAlerta("Para evitar erros de marcação, clique no atleta deste lance.");
+  return true;
+}
 
 const preco = 9.99;
 
@@ -1168,6 +1267,7 @@ player.on('timeupdate', d => {
 });
 
 timeline.onclick = e => {
+  if(marcacaoPendente()) return;
   cancelarInicioPorInteracao();
   
   const r = timeline.getBoundingClientRect();
@@ -1193,6 +1293,7 @@ function reset(){
 }
 
 function inicioLance(){
+  if(marcacaoPendente()) return;
   document.querySelector('.inicio').innerText = "🔴 Gravando...";
 
   contadorHUD.style.display = "block";
@@ -1227,6 +1328,7 @@ function inicioLance(){
 }
 
 function fimLance(){
+  if(marcacaoPendente()) return;
   if(inicio===null) return mostrarAlerta("Marque início");
   player.getCurrentTime().then(f=>finalizar(f));
 }
@@ -1274,11 +1376,13 @@ function finalizar(fim){
   }
 
   lances.push(novo);
-  salvarTudo();
   lances.sort((a,b) => a.inicio - b.inicio);
+  const indexNovoLance = lances.indexOf(novo);
+  salvarTudo();
   clearInterval(interval);
   reset();
   render();
+  player.pause().then(() => iniciarMarcacaoAtleta(indexNovoLance));
 }
 
 function calcDesc(i){
@@ -1325,6 +1429,7 @@ function render() {
           <span>${i + 1}. ${formatTime(l.inicio)}-${formatTime(l.fim)} (${Math.floor(l.dur)}s)</span>
           <span class="valor">💰Esse Lance: R$${valor.toFixed(2)}</span>
         </div>
+        ${l.atleta ? '<span class="status-atleta">🎯 Atleta marcado</span>' : ''}
       `;
 
       let v = document.createElement("button");
@@ -1338,6 +1443,7 @@ function render() {
       r.innerText = "🗑️ Remover";
 
       r.onclick = async () => {
+        if(marcacaoPendente()) return;
         await player.pause();
         abrirConfirmacao(i);
       };
@@ -1345,6 +1451,14 @@ function render() {
       let box = document.createElement("div");
       box.className = "linhaBotoes";
       box.append(v, r);
+
+      if(l.atleta){
+        let desmarcar = document.createElement("button");
+        desmarcar.className = "desmarcar-atleta";
+        desmarcar.innerText = "❌ Desmarcar atleta";
+        desmarcar.onclick = () => desmarcarAtleta(i);
+        box.append(desmarcar);
+      }
 
       li.append(box);
       lista.appendChild(li);
@@ -1405,10 +1519,12 @@ function render() {
 }
 
 function toggle(){
+  if(marcacaoPendente()) return;
   player.getPaused().then(p=>p?player.play():player.pause());
 }
 
 function pular(s){
+  if(marcacaoPendente()) return;
   cancelarInicioPorInteracao();
   
   mostrarAguarde();
@@ -1425,6 +1541,8 @@ function enviar(){
     mostrarAlerta("Adicione pelo menos 1 lance");
     return;
   }
+
+  if(!validarMarcacaoAtletas()) return;
     
   let tempoTotal = lances.reduce((acc, l) => acc + l.dur, 0);
   let tempoFormatado = formatTempoTotal(tempoTotal);
@@ -1472,6 +1590,8 @@ function enviar(){
 }
 
 document.getElementById("btn-confirmar").onclick = async function() {
+
+  if(!validarMarcacaoAtletas()) return;
 
   if(!opcaoSelecionada){
     mostrarAlerta("Selecione o formato do vídeo para continuar");
@@ -1521,6 +1641,9 @@ document.getElementById("btn-confirmar").onclick = async function() {
     totalSeg += dur;
 
     msg += `▶️ Lance ${i+1}: ${formatTime(l.inicio)}-${formatTime(l.fim)} (${dur}s)\n`;
+    if(l.atleta){
+      msg += `🎯 Atleta: x=${l.atleta.xPercent.toFixed(1)}%, y=${l.atleta.yPercent.toFixed(1)}%\n`;
+    }
   });
 
   let nomeFormatado = "Lances sem edição";
@@ -1980,11 +2103,14 @@ let modoScout = {
 
 function iniciarScout(i){
 
+  if(marcacaoPendente()) return;
+
   modoScout.slow = false;
   modoScout.loop = false;
   player.setPlaybackRate(1);
 
   const l = lances[i];
+  mostrarMarcador(l.atleta);
   const hud = document.getElementById("lanceHUD");
 
   // reset
