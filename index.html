@@ -807,7 +807,7 @@ li{
   flex-direction:column;
 ">
   <div style="background:#1e1e1e; padding:20px 30px; border-radius:12px; text-align:center; max-width:250px;">
-    <span class="girando">⏳</span> Aguarde, carregando...
+    <span class="girando">⏳</span> Carregando...
   </div>
 </div>
 
@@ -1631,11 +1631,17 @@ function confirmarTempo(){
   fecharModalTempo();
   cancelarInicioPorInteracao();
   mostrarAguarde();
+  const seguranca = setTimeout(fecharAguarde, 5000); // nunca deixa o modal preso
   player.getDuration()
     .then(d => player.setCurrentTime(Math.min(segundos, Math.max(0, d - 1))))
-    .then(() => player.play())
+    .then(() => {
+      clearTimeout(seguranca);
+      fecharAguarde(); // fecha assim que o vídeo foi posicionado
+      return player.play();
+    })
     .catch(() => {})
     .finally(() => {
+      clearTimeout(seguranca);
       fecharAguarde();
     });
 }
@@ -1784,7 +1790,7 @@ document.getElementById("btn-confirmar").onclick = async function() {
 
   // chama backend do Render para criar pagamento
   try {
-    mostrarAguarde(); // mostra o "Aguarde, carregando..."
+    mostrarAguarde(); // mostra o "Carregando..."
     
     const response = await fetch("https://backend-letto.onrender.com/criar-pagamento", {
       method: "POST",
