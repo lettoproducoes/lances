@@ -89,6 +89,7 @@ button{
   color:white;
 }
 
+.tempo{background:#3498db; flex:0.6;}
 .inicio{background:#2ecc71;}
 .fim{background:#e74c3c;}
 .playpause{background:#9b59b6;}
@@ -836,6 +837,7 @@ li{
 </div>
 
 <div class="controls">
+  <button class="tempo" onclick="abrirModalTempo()">⏱️ Tempo</button>
   <button class="inicio" onclick="inicioLance()">🟢 Marcar Início</button>
   <button class="fim" onclick="fimLance()">🔴 Marcar Fim</button>
 </div>
@@ -1019,6 +1021,49 @@ li{
       font-weight:bold;
       cursor:pointer;
     ">OK</button>
+  </div>
+</div>
+
+<div id="modal-tempo" onclick="if(event.target===this) fecharModalTempo()" style="
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.7);
+  justify-content:center;
+  align-items:center;
+  z-index:1900;
+">
+  <div style="
+    background:#1e1e1e;
+    padding:20px 30px;
+    border-radius:12px;
+    text-align:center;
+    max-width:300px;
+  ">
+    <p>Ir para o tempo (HH:MM:SS)</p>
+    <input type="text" id="input-tempo" inputmode="numeric" maxlength="8" placeholder="00:00:00"
+      oninput="mascaraTempo(this)" onkeydown="if(event.key==='Enter') confirmarTempo()" style="
+      width:100%;
+      padding:10px;
+      border:1px solid #333;
+      border-radius:6px;
+      background:#121212;
+      color:#fff;
+      font-size:18px;
+      text-align:center;
+    ">
+    <button onclick="confirmarTempo()" style="
+      margin-top:15px;
+      padding:8px 15px;
+      border:none;
+      border-radius:6px;
+      background:#2ecc71;
+      color:#fff;
+      font-weight:bold;
+      cursor:pointer;
+    ">CONFIRMAR</button>
   </div>
 </div>
 
@@ -1549,6 +1594,50 @@ function render() {
 function toggle(){
   if(marcacaoPendente()) return;
   player.getPaused().then(p=>p?player.play():player.pause());
+}
+
+function abrirModalTempo(){
+  if(marcacaoPendente()) return;
+  const input = document.getElementById('input-tempo');
+  input.value = '';
+  document.getElementById('modal-tempo').style.display = 'flex';
+  setTimeout(() => input.focus(), 50);
+}
+
+function fecharModalTempo(){
+  document.getElementById('modal-tempo').style.display = 'none';
+}
+
+function mascaraTempo(el){
+  let v = el.value.replace(/\D/g, '').slice(0, 6);
+  if(v.length > 4) v = v.replace(/(\d{2})(\d{2})(\d{1,2})/, '$1:$2:$3');
+  else if(v.length > 2) v = v.replace(/(\d{2})(\d{1,2})/, '$1:$2');
+  el.value = v;
+}
+
+function confirmarTempo(){
+  const valor = document.getElementById('input-tempo').value;
+  if(!/^\d{2}:\d{2}:\d{2}$/.test(valor)){
+    mostrarAlerta("Informe o tempo no formato HH:MM:SS");
+    return;
+  }
+  const [h, m, s] = valor.split(':').map(Number);
+  if(m > 59 || s > 59){
+    mostrarAlerta("Minutos e segundos devem estar entre 00 e 59");
+    return;
+  }
+  const segundos = h * 3600 + m * 60 + s;
+
+  fecharModalTempo();
+  cancelarInicioPorInteracao();
+  mostrarAguarde();
+  player.getDuration()
+    .then(d => player.setCurrentTime(Math.min(segundos, Math.max(0, d - 1))))
+    .then(() => player.play())
+    .catch(() => {})
+    .finally(() => {
+      fecharAguarde();
+    });
 }
 
 function pular(s){
