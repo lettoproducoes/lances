@@ -1131,12 +1131,27 @@ player.on('loaded', () => {
   
   const tempoSalvo = localStorage.getItem('tempoVideo_'+videoId);
 
+  // Inicia a reprodução automaticamente e sincroniza o ícone do botão play/pause
+  const iniciarAutomatico = () => {
+    player.play()
+      .catch(() => {})
+      .finally(() => {
+        player.getPaused().then(p => {
+          btn.innerText = p ? "▶️" : "⏸️";
+        });
+      });
+  };
+
   if(tempoSalvo){
     player.getDuration().then(dur=>{
       if(parseFloat(tempoSalvo) < dur - 5){
-        player.setCurrentTime(parseFloat(tempoSalvo));
+        return player.setCurrentTime(parseFloat(tempoSalvo));
       }
-    });
+    })
+    .catch(() => {})
+    .finally(iniciarAutomatico);
+  } else {
+    iniciarAutomatico();
   }
 
   // Fecha modal de aguarde caso ainda esteja aberto
