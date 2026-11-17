@@ -1114,7 +1114,7 @@ function getVideoId(){
 }
 
 const videoId = getVideoId();
-document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1`;
+document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1&playsinline=1`;
 
 const player = new Vimeo.Player('player');
 
@@ -1140,7 +1140,10 @@ function iniciarVideo(){
 }
 
 function tentarPlay(tentativas){
-  player.play()
+  // iOS só permite iniciar sozinho se o vídeo estiver sem som
+  player.setMuted(true)
+    .catch(() => {})
+    .then(() => player.play())
     .catch(() => {})
     .finally(() => {
       player.getPaused().then(p => {
@@ -1157,6 +1160,28 @@ player.ready().then(() => {
   fecharAguarde();
   iniciarVideo();
 });
+
+// iOS (Safari/Chrome no iPhone/iPad) pode bloquear o início automático,
+// principalmente no Modo de Pouca Energia. Nesse caso, o primeiro toque
+// em qualquer ponto da tela (fora dos botões/controles) inicia o vídeo.
+function playNoPrimeiroToque(e){
+  if(autoplayCancelado){ removerPlayNoToque(); return; }
+  if(e.target.closest('button, input, #timeline, #modal-tempo, #modal-alerta, #modal-confirmacao, #area-marcacao-atleta')) return;
+  player.getPaused().then(p => {
+    if(p){
+      player.play()
+        .then(() => { document.getElementById("btnPlayPause").innerText = "⏸️"; })
+        .catch(() => {});
+    }
+  });
+  removerPlayNoToque();
+}
+function removerPlayNoToque(){
+  document.removeEventListener('touchend', playNoPrimeiroToque, true);
+  document.removeEventListener('click', playNoPrimeiroToque, true);
+}
+document.addEventListener('touchend', playNoPrimeiroToque, true);
+document.addEventListener('click', playNoPrimeiroToque, true);
 
 player.on('loaded', () => {
   carregouPagina = true;
