@@ -818,7 +818,7 @@ li{
 <div id="lado-esquerdo">
 
 <div id="player-container">
-  <iframe id="player" allow="autoplay; fullscreen"></iframe>
+  <iframe id="player" allow="autoplay; fullscreen; picture-in-picture" playsinline webkit-playsinline></iframe>
   <div id="area-marcacao-atleta"></div>
   <div id="marcador-atleta">🎯</div>
   <div id="videoTitle">🎥 Nome do vídeo aqui</div>
@@ -1123,36 +1123,49 @@ const player = new Vimeo.Player('player');
 let videoIniciado = false;
 let autoplayCancelado = false; // usuário interagiu com o play/pause
 
+// Evita que uma promessa do player que nunca responde (comum no iOS) trave o fluxo
+function comLimite(promessa, ms){
+  return Promise.race([
+    Promise.resolve(promessa),
+    new Promise((_, rej) => setTimeout(() => rej('timeout'), ms))
+  ]);
+}
+
 function iniciarVideo(){
   if(videoIniciado) return;
   videoIniciado = true;
 
-  const tempoSalvo = parseFloat(localStorage.getItem('tempoVideo_'+videoId));
-
-  player.getDuration()
-    .then(dur => {
-      if(tempoSalvo && tempoSalvo < dur - 5){
-        return player.setCurrentTime(tempoSalvo);
-      }
-    })
-    .catch(() => {})
-    .finally(() => tentarPlay(6));
+  // No iOS, posicionar o vídeo ANTES de ele começar a tocar costuma travar o player.
+  // Por isso: primeiro dá o play, e só depois que estiver tocando vai para o tempo salvo.
+  tentarPlay(8, () => {
+    const tempoSalvo = parseFloat(localStorage.getItem('tempoVideo_'+videoId));
+    if(!tempoSalvo) return;
+    comLimite(player.getDuration(), 3000)
+      .then(dur => {
+        if(tempoSalvo < dur - 5) return player.setCurrentTime(tempoSalvo);
+      })
+      .catch(() => {});
+  });
 }
 
-function tentarPlay(tentativas){
+function tentarPlay(tentativas, aoTocar){
   // iOS só permite iniciar sozinho se o vídeo estiver sem som
-  player.setMuted(true)
+  comLimite(player.setMuted(true), 1500)
     .catch(() => {})
-    .then(() => player.play())
+    .then(() => comLimite(player.play(), 2500))
     .catch(() => {})
-    .finally(() => {
-      player.getPaused().then(p => {
-        document.getElementById("btnPlayPause").innerText = p ? "▶️" : "⏸️";
-        // se ainda estiver pausado, tenta de novo algumas vezes
-        if(p && tentativas > 1 && !autoplayCancelado){
-          setTimeout(() => tentarPlay(tentativas - 1), 700);
-        }
-      });
+    .then(() => comLimite(player.getPaused(), 1500))
+    .catch(() => true)
+    .then(p => {
+      document.getElementById("btnPlayPause").innerText = p ? "▶️" : "⏸️";
+      if(!p){
+        if(aoTocar) aoTocar();
+        return;
+      }
+      // se ainda estiver pausado, tenta de novo algumas vezes
+      if(tentativas > 1 && !autoplayCancelado){
+        setTimeout(() => tentarPlay(tentativas - 1, aoTocar), 800);
+      }
     });
 }
 
