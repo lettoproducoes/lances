@@ -1703,12 +1703,15 @@ function confirmarTempo(){
   cancelarInicioPorInteracao();
   mostrarAguarde();
   const seguranca = setTimeout(fecharAguarde, 5000); // nunca deixa o modal preso
-  player.getDuration()
+  autoplayCancelado = true; // não deixa o início automático retomar o vídeo
+  // Apenas posiciona o vídeo, mantendo a imagem parada para facilitar a marcação
+  player.pause()
+    .catch(() => {})
+    .then(() => player.getDuration())
     .then(d => player.setCurrentTime(Math.min(segundos, Math.max(0, d - 1))))
     .then(() => {
       clearTimeout(seguranca);
       fecharAguarde(); // fecha assim que o vídeo foi posicionado
-      return player.play();
     })
     .catch(() => {})
     .finally(() => {
