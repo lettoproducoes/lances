@@ -1118,6 +1118,46 @@ document.getElementById('player').src = `https://player.vimeo.com/video/${videoI
 
 const player = new Vimeo.Player('player');
 
+// Posiciona no tempo salvo (se houver) e inicia a reprodução automaticamente,
+// exatamente como o botão play faz. Roda uma única vez, assim que o player estiver pronto.
+let videoIniciado = false;
+let autoplayCancelado = false; // usuário interagiu com o play/pause
+
+function iniciarVideo(){
+  if(videoIniciado) return;
+  videoIniciado = true;
+
+  const tempoSalvo = parseFloat(localStorage.getItem('tempoVideo_'+videoId));
+
+  player.getDuration()
+    .then(dur => {
+      if(tempoSalvo && tempoSalvo < dur - 5){
+        return player.setCurrentTime(tempoSalvo);
+      }
+    })
+    .catch(() => {})
+    .finally(() => tentarPlay(6));
+}
+
+function tentarPlay(tentativas){
+  player.play()
+    .catch(() => {})
+    .finally(() => {
+      player.getPaused().then(p => {
+        document.getElementById("btnPlayPause").innerText = p ? "▶️" : "⏸️";
+        // se ainda estiver pausado, tenta de novo algumas vezes
+        if(p && tentativas > 1 && !autoplayCancelado){
+          setTimeout(() => tentarPlay(tentativas - 1), 700);
+        }
+      });
+    });
+}
+
+player.ready().then(() => {
+  fecharAguarde();
+  iniciarVideo();
+});
+
 player.on('loaded', () => {
   carregouPagina = true;
 
@@ -1129,30 +1169,7 @@ player.on('loaded', () => {
     document.getElementById('videoTitle').style.opacity = "0";
   }, 10000);
   
-  const tempoSalvo = localStorage.getItem('tempoVideo_'+videoId);
-
-  // Inicia a reprodução automaticamente e sincroniza o ícone do botão play/pause
-  const iniciarAutomatico = () => {
-    player.play()
-      .catch(() => {})
-      .finally(() => {
-        player.getPaused().then(p => {
-          btn.innerText = p ? "▶️" : "⏸️";
-        });
-      });
-  };
-
-  if(tempoSalvo){
-    player.getDuration().then(dur=>{
-      if(parseFloat(tempoSalvo) < dur - 5){
-        return player.setCurrentTime(parseFloat(tempoSalvo));
-      }
-    })
-    .catch(() => {})
-    .finally(iniciarAutomatico);
-  } else {
-    iniciarAutomatico();
-  }
+  iniciarVideo();
 
   // Fecha modal de aguarde caso ainda esteja aberto
   fecharAguarde();
@@ -1608,6 +1625,7 @@ function render() {
 
 function toggle(){
   if(marcacaoPendente()) return;
+  autoplayCancelado = true;
   player.getPaused().then(p=>p?player.play():player.pause());
 }
 
