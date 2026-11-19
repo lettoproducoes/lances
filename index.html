@@ -789,10 +789,15 @@ li{
 
 
 /* LISTA DE VÍDEOS (página inicial quando não há ?video=) */
+/* no modo lista, só a lista ocupa a página (evita o conteúdo da ferramenta alargar a tela no celular) */
+body.modo-lista > *:not(#tela-videos){display:none !important;}
 #tela-videos{
   display:none;
   position:fixed;
   inset:0;
+  width:100%;
+  max-width:100vw;
+  overflow-x:hidden;
   background:#121212;
   z-index:1800;
   overflow-y:auto;
@@ -813,11 +818,12 @@ li{
 #status-videos{text-align:center; padding:20px; color:#aaa;}
 #grade-videos{
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns:repeat(auto-fill, minmax(min(150px, 100%), 1fr));
   gap:10px;
   padding:0 10px 20px;
 }
 .card-video{
+  min-width:0;
   background:#181818;
   border:1px solid #333;
   border-radius:10px;
@@ -839,6 +845,7 @@ li{
   font-size:11px;
 }
 .card-video .titulo{
+  overflow-wrap:anywhere;
   padding:8px;
   font-size:13px;
   line-height:1.3;
@@ -1178,6 +1185,7 @@ const VIMEO_TOKEN = '817171284def14c2121d625ec2788432';
 
 const parametrosUrl = new URLSearchParams(window.location.search);
 const modoLista = !parametrosUrl.get('video'); // sem ?video= → mostra a lista de vídeos
+if(modoLista) document.body.classList.add('modo-lista');
 const videoHash = parametrosUrl.get('h') || ''; // necessário para vídeos "não listados"
 
 function getVideoId(){
