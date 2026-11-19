@@ -1188,6 +1188,39 @@ const videoId = getVideoId();
 document.getElementById('player').src =
   `https://player.vimeo.com/video/${videoId}?${videoHash ? 'h=' + videoHash + '&' : ''}background=1&autoplay=${modoLista ? 0 : 1}&muted=1&playsinline=1`;
 
+// ===== PADRONIZAÇÃO DOS TÍTULOS DA LISTA =====
+// Siglas que devem aparecer sempre em MAIÚSCULA (edite à vontade)
+const SIGLAS = ['TO', 'FC', 'EC', 'UFV', 'CM', 'CEFAI', 'RJ', 'AABB', 'CAP'];
+// Palavras que ficam em minúscula (exceto quando abrem o título)
+const PALAVRAS_MINUSCULAS = ['x', 'vs', 'e', 'de', 'da', 'do', 'das', 'dos'];
+// Correções de acentuação (chave sem acento, em minúscula → forma correta)
+const CORRECOES = { america:'América', gremio:'Grêmio', siderurgica:'Siderúrgica' };
+
+function semAcento(t){
+  return t.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function formatarTitulo(titulo){
+  // padroniza "sub14", "SUB 14", "Sub13" → "Sub 14"
+  let t = (titulo || '').trim().replace(/\bsub\s*(\d)/gi, 'Sub $1');
+
+  let primeira = true;
+  return t.split(/([^0-9A-Za-zÀ-ÖØ-öø-ÿ]+)/).map(parte => {
+    if(!parte || !/[0-9A-Za-zÀ-ÖØ-öø-ÿ]/.test(parte)) return parte; // separadores
+    const chave = semAcento(parte).toLowerCase();
+    const ehPrimeira = primeira;
+    primeira = false;
+
+    if(SIGLAS.includes(chave.toUpperCase())) return parte.toLocaleUpperCase('pt-BR');
+    if(/\d/.test(parte) && /[A-Za-z]/.test(parte)) return parte.toLocaleUpperCase('pt-BR'); // ex.: J10
+    if(CORRECOES[chave]) return CORRECOES[chave];
+    if(!ehPrimeira && PALAVRAS_MINUSCULAS.includes(chave)) return parte.toLocaleLowerCase('pt-BR');
+
+    const min = parte.toLocaleLowerCase('pt-BR');
+    return min.charAt(0).toLocaleUpperCase('pt-BR') + min.slice(1);
+  }).join('');
+}
+
 let listaVideos = [];
 
 async function carregarListaVideos(){
@@ -1216,7 +1249,8 @@ async function carregarListaVideos(){
         listaVideos.push({
           id: v.uri.split('/').pop(),
           h,
-          titulo: v.name || 'Sem título',
+          titulo: formatarTitulo(v.name) || 'Sem título',
+          tituloOriginal: v.name || '',
           duracao: v.duration || 0,
           miniatura
         });
@@ -1266,8 +1300,11 @@ function desenharVideos(videos){
 }
 
 function filtrarVideos(){
-  const termo = document.getElementById('busca-videos').value.trim().toLowerCase();
-  const filtrados = listaVideos.filter(v => v.titulo.toLowerCase().includes(termo));
+  // busca ignora maiúsculas/minúsculas e acentos
+  const termo = semAcento(document.getElementById('busca-videos').value.trim().toLowerCase());
+  const filtrados = listaVideos.filter(v =>
+    semAcento((v.titulo + ' ' + v.tituloOriginal).toLowerCase()).includes(termo)
+  );
   desenharVideos(filtrados);
   const status = document.getElementById('status-videos');
   status.style.display = filtrados.length ? 'none' : 'block';
