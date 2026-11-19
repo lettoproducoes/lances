@@ -787,10 +787,74 @@ li{
   gap:10px;
 }
 
+
+/* LISTA DE VÍDEOS (página inicial quando não há ?video=) */
+#tela-videos{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#121212;
+  z-index:1800;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#tela-videos h2{position:sticky; top:0; z-index:1;}
+#busca-videos{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px;
+  padding:10px;
+  border:1px solid #333;
+  border-radius:10px;
+  background:#1e1e1e;
+  color:#fff;
+  font-size:15px;
+}
+#status-videos{text-align:center; padding:20px; color:#aaa;}
+#grade-videos{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+  gap:10px;
+  padding:0 10px 20px;
+}
+.card-video{
+  background:#181818;
+  border:1px solid #333;
+  border-radius:10px;
+  overflow:hidden;
+  cursor:pointer;
+}
+.card-video:active{opacity:.7;}
+.card-video .thumb{
+  position:relative;
+  aspect-ratio:16/9;
+  background:#2a2a2a center/cover no-repeat;
+}
+.card-video .dur{
+  position:absolute;
+  right:6px; bottom:6px;
+  background:rgba(0,0,0,.75);
+  padding:2px 6px;
+  border-radius:4px;
+  font-size:11px;
+}
+.card-video .titulo{
+  padding:8px;
+  font-size:13px;
+  line-height:1.3;
+}
 </style>
 </head>
 
 <body>
+
+<div id="tela-videos">
+  <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
+  <input type="text" id="busca-videos" placeholder="🔍 Buscar vídeo..." oninput="filtrarVideos()">
+  <div id="status-videos">⏳ Carregando...</div>
+  <div id="grade-videos"></div>
+</div>
+
 
 <div id="modal-aguarde" style="
   display:none;
@@ -1108,13 +1172,107 @@ li{
 <script>
 let carregouPagina = false;
 
+// ===== LISTA DE VÍDEOS DA CONTA VIMEO =====
+// Token da API do Vimeo (gere em developer.vimeo.com com APENAS os escopos "Public" e "Private")
+const VIMEO_TOKEN = 'XTrsPLrM6POsj6pVe+AX8m9iFEHeCYsWkvN4lUHe0htXVxGpt+gUpKl1Kf1brkzv6e5GfrWjjzhceGbJ1lmZIVft4Y6ym8lNL49n04x9rCmou8QiVJ2dantakV7rjTl0';
+
+const parametrosUrl = new URLSearchParams(window.location.search);
+const modoLista = !parametrosUrl.get('video'); // sem ?video= → mostra a lista de vídeos
+const videoHash = parametrosUrl.get('h') || ''; // necessário para vídeos "não listados"
+
 function getVideoId(){
-  const params = new URLSearchParams(window.location.search);
-  return params.get('video') || '1175798353';
+  return parametrosUrl.get('video') || '1175798353';
 }
 
 const videoId = getVideoId();
-document.getElementById('player').src = `https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&muted=1&playsinline=1`;
+document.getElementById('player').src =
+  `https://player.vimeo.com/video/${videoId}?${videoHash ? 'h=' + videoHash + '&' : ''}background=1&autoplay=${modoLista ? 0 : 1}&muted=1&playsinline=1`;
+
+let listaVideos = [];
+
+async function carregarListaVideos(){
+  const status = document.getElementById('status-videos');
+  document.getElementById('tela-videos').style.display = 'block';
+
+  try{
+    let url = '/me/videos?per_page=100&sort=date&direction=desc&fields=uri,name,duration,pictures.sizes,player_embed_url';
+    listaVideos = [];
+
+    while(url){
+      const r = await fetch('https://api.vimeo.com' + url, {
+        headers: {
+          Authorization: 'bearer ' + VIMEO_TOKEN,
+          Accept: 'application/vnd.vimeo.*+json;version=3.4'
+        }
+      });
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+
+      (d.data || []).forEach(v => {
+        let h = '';
+        try{ h = new URL(v.player_embed_url).searchParams.get('h') || ''; }catch(e){}
+        const tamanhos = (v.pictures && v.pictures.sizes) || [];
+        const miniatura = (tamanhos.find(t => t.width >= 640) || tamanhos[tamanhos.length - 1] || {}).link || '';
+        listaVideos.push({
+          id: v.uri.split('/').pop(),
+          h,
+          titulo: v.name || 'Sem título',
+          duracao: v.duration || 0,
+          miniatura
+        });
+      });
+
+      url = d.paging && d.paging.next;
+      status.innerText = `⏳ Carregando... (${listaVideos.length})`;
+    }
+
+    status.style.display = listaVideos.length ? 'none' : 'block';
+    if(!listaVideos.length) status.innerText = 'Nenhum vídeo encontrado.';
+    desenharVideos(listaVideos);
+
+  }catch(e){
+    status.innerText = '⚠️ Não foi possível carregar a lista de vídeos. Verifique o token do Vimeo.';
+  }
+}
+
+function desenharVideos(videos){
+  const grade = document.getElementById('grade-videos');
+  grade.innerHTML = '';
+
+  videos.forEach(v => {
+    const card = document.createElement('div');
+    card.className = 'card-video';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    if(v.miniatura) thumb.style.backgroundImage = `url("${v.miniatura}")`;
+
+    const dur = document.createElement('span');
+    dur.className = 'dur';
+    dur.innerText = formatTime(Math.floor(v.duracao));
+    thumb.append(dur);
+
+    const titulo = document.createElement('div');
+    titulo.className = 'titulo';
+    titulo.innerText = v.titulo;
+
+    card.append(thumb, titulo);
+    card.onclick = () => {
+      window.location.href = `?video=${v.id}${v.h ? '&h=' + v.h : ''}`;
+    };
+
+    grade.append(card);
+  });
+}
+
+function filtrarVideos(){
+  const termo = document.getElementById('busca-videos').value.trim().toLowerCase();
+  const filtrados = listaVideos.filter(v => v.titulo.toLowerCase().includes(termo));
+  desenharVideos(filtrados);
+  const status = document.getElementById('status-videos');
+  status.style.display = filtrados.length ? 'none' : 'block';
+  if(!filtrados.length) status.innerText = 'Nenhum vídeo encontrado.';
+}
 
 const player = new Vimeo.Player('player');
 
@@ -1132,7 +1290,7 @@ function comLimite(promessa, ms){
 }
 
 function iniciarVideo(){
-  if(videoIniciado) return;
+  if(videoIniciado || modoLista) return;
   videoIniciado = true;
 
   // No iOS, posicionar o vídeo ANTES de ele começar a tocar costuma travar o player.
@@ -1193,8 +1351,16 @@ function removerPlayNoToque(){
   document.removeEventListener('touchend', playNoPrimeiroToque, true);
   document.removeEventListener('click', playNoPrimeiroToque, true);
 }
-document.addEventListener('touchend', playNoPrimeiroToque, true);
-document.addEventListener('click', playNoPrimeiroToque, true);
+if(!modoLista){
+  document.addEventListener('touchend', playNoPrimeiroToque, true);
+  document.addEventListener('click', playNoPrimeiroToque, true);
+}
+
+if(modoLista){
+  player.ready().then(() => player.pause()).catch(() => {}); // vídeo de fundo fica parado
+  window.addEventListener('DOMContentLoaded', carregarListaVideos);
+  if(document.readyState !== 'loading') carregarListaVideos();
+}
 
 player.on('loaded', () => {
   carregouPagina = true;
@@ -1825,7 +1991,7 @@ document.getElementById("btn-confirmar").onclick = async function() {
   let tempoFormatado = formatTempoTotal(tempoTotal);
 
   // Monta mensagem (mantive seu padrão)
-  let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}`;
+  let videoLink=`https://lettoproducoes.github.io/lances/?video=${videoId}${videoHash ? '&h=' + videoHash : ''}`;
 
   let msg="⚽ *Pedido Letto*\n\n";
 
