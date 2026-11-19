@@ -791,6 +791,7 @@ li{
 /* LISTA DE VÍDEOS (página inicial quando não há ?video=) */
 /* no modo lista, só a lista ocupa a página (evita o conteúdo da ferramenta alargar a tela no celular) */
 body.modo-lista > *:not(#tela-videos){display:none !important;}
+html:has(body.modo-lista), body.modo-lista{overflow-x:hidden; max-width:100%;}
 #tela-videos{
   display:none;
   position:fixed;
@@ -802,6 +803,7 @@ body.modo-lista > *:not(#tela-videos){display:none !important;}
   z-index:1800;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
+  touch-action:pan-y; /* só rolagem vertical */
 }
 #tela-videos h2{position:sticky; top:0; z-index:1;}
 #busca-videos{
@@ -813,12 +815,12 @@ body.modo-lista > *:not(#tela-videos){display:none !important;}
   border-radius:10px;
   background:#1e1e1e;
   color:#fff;
-  font-size:15px;
+  font-size:16px; /* menor que 16px faz o Safari do iPhone dar zoom e "alargar" a tela */
 }
 #status-videos{text-align:center; padding:20px; color:#aaa;}
 #grade-videos{
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(min(150px, 100%), 1fr));
+  grid-template-columns:repeat(auto-fill, minmax(min(140px, 100%), 1fr));
   gap:10px;
   padding:0 10px 20px;
 }
@@ -1229,6 +1231,9 @@ function formatarTitulo(titulo){
   }).join('');
 }
 
+// Vídeos que não devem aparecer na lista (comparação ignora maiúsculas e acentos)
+const VIDEOS_OCULTOS = ['set up your first video', 'setup your first video'];
+
 let listaVideos = [];
 
 async function carregarListaVideos(){
@@ -1250,6 +1255,8 @@ async function carregarListaVideos(){
       const d = await r.json();
 
       (d.data || []).forEach(v => {
+        const nome = semAcento((v.name || '').toLowerCase()).trim();
+        if(VIDEOS_OCULTOS.some(o => nome.includes(o))) return;
         let h = '';
         try{ h = new URL(v.player_embed_url).searchParams.get('h') || ''; }catch(e){}
         const tamanhos = (v.pictures && v.pictures.sizes) || [];
