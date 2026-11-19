@@ -865,7 +865,7 @@ html:has(body.modo-lista), body.modo-lista{overflow-x:hidden; max-width:100%;}
 
 <div id="tela-videos">
   <h2>⚽🏃‍♂️ LETTO 💪🥋</h2>
-  <input type="text" id="busca-videos" placeholder="🔍 Buscar vídeo..." oninput="filtrarVideos()">
+  <input type="text" id="busca-videos" placeholder="🔍 Buscar vídeo (nome ou data)..." oninput="filtrarVideos()">
   <div id="status-videos">⏳ Carregando...</div>
   <div id="grade-videos"></div>
 </div>
@@ -1247,7 +1247,7 @@ async function carregarListaVideos(){
   document.getElementById('tela-videos').style.display = 'block';
 
   try{
-    let url = '/me/videos?per_page=100&sort=date&direction=desc&fields=uri,name,duration,pictures.sizes,player_embed_url';
+    let url = '/me/videos?per_page=100&sort=date&direction=desc&fields=uri,name,duration,pictures.sizes,player_embed_url,created_time';
     listaVideos = [];
 
     while(url){
@@ -1272,6 +1272,7 @@ async function carregarListaVideos(){
           h,
           titulo: formatarTitulo(v.name) || 'Sem título',
           tituloOriginal: v.name || '',
+          data: v.created_time ? new Date(v.created_time).toLocaleDateString('pt-BR') : '', // dd/mm/aaaa
           duracao: v.duration || 0,
           miniatura
         });
@@ -1324,7 +1325,7 @@ function filtrarVideos(){
   // busca ignora maiúsculas/minúsculas e acentos
   const termo = semAcento(document.getElementById('busca-videos').value.trim().toLowerCase());
   const filtrados = listaVideos.filter(v =>
-    semAcento((v.titulo + ' ' + v.tituloOriginal).toLowerCase()).includes(termo)
+    semAcento((v.titulo + ' ' + v.tituloOriginal + ' ' + v.data).toLowerCase()).includes(termo)
   );
   desenharVideos(filtrados);
   const status = document.getElementById('status-videos');
